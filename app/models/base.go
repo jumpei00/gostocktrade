@@ -12,16 +12,14 @@ import (
 // DB is DBconnection
 var DB *gorm.DB
 
-
-// Candle is daily stock candledata
+// Candle is daily stock candledata, also used as json
 type Candle struct {
-	gorm.Model
-	Date   time.Time
-	Open   float64
-	High   float64
-	Low    float64
-	Close  float64
-	Volume float64
+	Date   time.Time `json:"date"`
+	Open   float64   `json:"open"`
+	High   float64   `json:"high"`
+	Low    float64   `json:"low"`
+	Close  float64   `json:"close"`
+	Volume float64   `json:"volume"`
 }
 
 func init() {
