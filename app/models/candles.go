@@ -40,14 +40,14 @@ func AllDeleteCandles() {
 
 // GetCandles gets candle data for limit by descending
 // After get data, return DataFrame stored in data
-func GetCandles(limit int) *DataFrame {
+func GetCandles(limit int) *CandleFrame {
 	var candles Candles
 	DB.Order("date desc").Limit(limit).Order("date asc").Find(&candles)
 
-	df := DataFrame{}
+	cframe := CandleFrame{}
 	for _, candle := range candles {
-		df.Candles = append(df.Candles, candle)
+		cframe.Candles = append(cframe.Candles, candle)
 	}
 
-	return &df
+	return &cframe
 }
