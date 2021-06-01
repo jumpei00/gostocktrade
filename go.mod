@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/markcheno/go-quote v0.0.0-20201111135441-45c9eb9ba017
+	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	gopkg.in/ini.v1 v1.62.0
