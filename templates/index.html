@@ -4,12 +4,25 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script type="text/javascript" src="/static/main.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/stocktools/gui.css">
+        <link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/annotations/popup.css">
+        <script src="https://code.highcharts.com/stock/highstock.js"></script>
+        <script src="https://code.highcharts.com/stock/indicators/indicators-all.js"></script>
+        <script src="https://code.highcharts.com/modules/drag-panes.js"></script>
+        <script src="https://code.highcharts.com/modules/annotations-advanced.js"></script>
+        <script src="https://code.highcharts.com/modules/price-indicator.js"></script>
+        <script src="https://code.highcharts.com/modules/full-screen.js"></script>
+        <script src="https://code.highcharts.com/modules/stock-tools.js"></script>
+        <script type="module" src="/static/main.js"></script>
         <title>Stock</title>
     </head>
-
+    
     <body>
-        <h1>Hello World</h1>
+        <h2 id="realtime"></h2>
+        <button id="candlesGet">GET</button>
+        <input id="symbol" type="text" value="VOO">
+        <input id="period" type="text" value="365">
+        <div id="container" style= "max-height: 800px; min-height: 75vh;"></div>
     </body>
 
 </html>
