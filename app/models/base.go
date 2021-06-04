@@ -1,8 +1,6 @@
 package models
 
 import (
-	"time"
-
 	"github.com/jumpei00/gostocktrade/config"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
@@ -14,12 +12,12 @@ var DB *gorm.DB
 
 // Candle is daily stock candledata, also used as json
 type Candle struct {
-	Date   time.Time `json:"date"`
-	Open   float64   `json:"open"`
-	High   float64   `json:"high"`
-	Low    float64   `json:"low"`
-	Close  float64   `json:"close"`
-	Volume float64   `json:"volume"`
+	Time   int64   `json:"time"`
+	Open   float64 `json:"open"`
+	High   float64 `json:"high"`
+	Low    float64 `json:"low"`
+	Close  float64 `json:"close"`
+	Volume float64 `json:"volume"`
 }
 
 func init() {
