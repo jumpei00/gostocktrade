@@ -13,14 +13,14 @@ export function viewChart(symbol, json) {
 
     for (let candle of json) {
         candles.push([
-            candle.time * 1000,
+            candle.time,
             candle.open,
             candle.high,
             candle.low,
             candle.close
         ])
         volume.push([
-            candle.time * 1000,
+            candle.time,
             candle.volume
         ])
     }
