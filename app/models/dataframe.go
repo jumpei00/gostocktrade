@@ -1,11 +1,21 @@
 package models
 
-import "github.com/markcheno/go-talib"
+import (
+	"github.com/jumpei00/gostocktrade/app/models/indicator"
+	"github.com/markcheno/go-talib"
+)
 
-// CandleFrame is json frame of candles data
-// After get data, those are stored in this struct
+// DataFrame is data frame including candles, optimized parameters, signals
+type DataFrame struct {
+	*CandleFrame
+	*SignalFrame
+	*OptimizedParam
+}
+
+// CandleFrame is candle data frame
 type CandleFrame struct {
-	Candles []Candle `json:"candles"`
+	Symbol  string   `json:"symbol,omitempty"`
+	Candles []Candle `json:"candles,omitempty"`
 }
 
 // Opens is open prices of candles
@@ -53,23 +63,33 @@ func (cframe *CandleFrame) Volumes() []float64 {
 	return volume
 }
 
+// SignalFrame is dataframe of SignalEvents
+type SignalFrame struct {
+	Signals *SignalEvents `json:"signals,omitempty"`
+}
+
+// OptimizedParamFrame is optimized params data frame
+type OptimizedParamFrame struct {
+	Param *OptimizedParam `json:"optimized_params,omitempty"`
+}
+
 // IndicatorFrame is json frame of indicator data
 // After calculate data, those are stored in this struct
 type IndicatorFrame struct {
-	*CandleFrame `json:"-"`
-	Smas         []Sma   `json:"smas,omitempty"`
-	Emas         []Ema   `json:"emas,omitempty"`
-	BBands       *BBands `json:"bbands,omitempty"`
-	Macd         *Macd   `json:"macd,omitempty"`
-	Rsi          *Rsi    `json:"rsi,omitempty"`
-	WillR        *WillR  `json:"willr,omitempty"`
+	*CandleFrame
+	Smas   []indicator.Sma   `json:"smas,omitempty"`
+	Emas   []indicator.Ema   `json:"emas,omitempty"`
+	BBands *indicator.BBands `json:"bbands,omitempty"`
+	Macd   *indicator.Macd   `json:"macd,omitempty"`
+	Rsi    *indicator.Rsi    `json:"rsi,omitempty"`
+	WillR  *indicator.Willr  `json:"willr,omitempty"`
 }
 
 // NewIndicator is constractor of IndicatorFrame,
 // and embeded CandleFrame, but not json
-func NewIndicator(limit int) *IndicatorFrame {
+func NewIndicator(symbol string, limit int) *IndicatorFrame {
 	iframe := IndicatorFrame{
-		CandleFrame: GetCandles(limit),
+		CandleFrame: GetCandleFrame(symbol, limit),
 	}
 	return &iframe
 }
@@ -80,7 +100,7 @@ func (iframe *IndicatorFrame) AddSma(period int) bool {
 		return false
 	}
 
-	iframe.Smas = append(iframe.Smas, Sma{
+	iframe.Smas = append(iframe.Smas, indicator.Sma{
 		Period: period,
 		Values: talib.Sma(iframe.Closes(), period),
 	})
@@ -93,7 +113,7 @@ func (iframe *IndicatorFrame) AddEma(period int) bool {
 		return false
 	}
 
-	iframe.Emas = append(iframe.Emas, Ema{
+	iframe.Emas = append(iframe.Emas, indicator.Ema{
 		Period: period,
 		Values: talib.Ema(iframe.Closes(), period),
 	})
@@ -107,7 +127,7 @@ func (iframe *IndicatorFrame) AddBBands(N int, K float64) bool {
 	}
 
 	up, mid, low := talib.BBands(iframe.Closes(), N, K, K, 0)
-	iframe.BBands = &BBands{
+	iframe.BBands = &indicator.BBands{
 		N:   N,
 		K:   K,
 		Up:  up,
@@ -124,7 +144,7 @@ func (iframe *IndicatorFrame) AddMacd(fast, slow, signal int) bool {
 	}
 
 	macd, macdSignal, macdHist := talib.Macd(iframe.Closes(), fast, slow, signal)
-	iframe.Macd = &Macd{
+	iframe.Macd = &indicator.Macd{
 		Fast:       fast,
 		Slow:       slow,
 		Signal:     signal,
@@ -141,20 +161,20 @@ func (iframe *IndicatorFrame) AddRsi(period int) bool {
 		return false
 	}
 
-	iframe.Rsi = &Rsi{
+	iframe.Rsi = &indicator.Rsi{
 		Period: period,
 		Values: talib.Rsi(iframe.Closes(), period),
 	}
 	return true
 }
 
-// AddWillR adds WilliamR data in IndicatorFrame.WillR
-func (iframe *IndicatorFrame) AddWillR(period int) bool {
+// AddWillr adds WilliamR data in IndicatorFrame.WillR
+func (iframe *IndicatorFrame) AddWillr(period int) bool {
 	if period > len(iframe.Candles) {
 		return false
 	}
 
-	iframe.WillR = &WillR{
+	iframe.WillR = &indicator.Willr{
 		Period: period,
 		Values: talib.WillR(iframe.Highs(), iframe.Lows(), iframe.Closes(), period),
 	}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jumpei00/gostocktrade/app/models"
 	"github.com/jumpei00/gostocktrade/config"
+	"github.com/jumpei00/gostocktrade/stock"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,22 +43,22 @@ func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Comentout for developing
+	// Downloads stock data
+	stockData, err := stock.GetStockData(symbol, period)
+	if err != nil {
+		logrus.Warnf("stock get error: %v", err)
+		errorAPI(
+			w, fmt.Sprintf("stock get error: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	// stockData, err := stock.GetStockData(symbol, period)
-	// if err != nil {
-	// 	logrus.Warnf("stock get error: %v", err)
-	// 	errorAPI(
-	// 		w, fmt.Sprintf("stock get error: %v", err), http.StatusInternalServerError)
-	// 	return
-	// }
+	// After delete existing data, store stock data in DB
+	models.AllDeleteCandles()
+	models.NewCandlesFromQuote(stockData).CreateCandles()
 
-	// models.AllDeleteCandles()
-	// models.NewCandlesFromQuote(stockData).CreateCandles()
+	dframe := models.GetDataFrameInCandles(symbol, period)
 
-	cframe := models.GetCandles(period)
-
-	js, err := json.Marshal(cframe)
+	js, err := json.Marshal(dframe)
 	if err != nil {
 		logrus.Warnf("candle json error: %v", err)
 		errorAPI(w, "candle json error", http.StatusInternalServerError)
@@ -70,7 +71,13 @@ func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 
 // This api does not use??(indicator can calcurate on frontend)
 func indicatorAPIHandler(w http.ResponseWriter, req *http.Request) {
-	iframe := models.NewIndicator(365)
+	symbol := req.URL.Query().Get("symbol")
+	if symbol == "" {
+		errorAPI(w, "bad parameter(symbol, period)", http.StatusBadRequest)
+		return
+	}
+
+	iframe := models.NewIndicator(symbol, 365)
 	iframe.AddEma(8)
 
 	js, err := json.Marshal(iframe)
