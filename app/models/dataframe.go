@@ -9,7 +9,27 @@ import (
 type DataFrame struct {
 	*CandleFrame
 	*SignalFrame
-	*OptimizedParam
+	*OptimizedParamFrame
+}
+
+// NewDataFrame is constructor of DataFrame
+func NewDataFrame() *DataFrame {
+	return &DataFrame{}
+}
+
+// AddCandleFrame adds CandleFrame in DataFrame
+func (dframe *DataFrame) AddCandleFrame(symbol string, limit int) {
+	dframe.CandleFrame = GetCandleFrame(symbol, limit)
+}
+
+// AddSignalFrame adds SignalFrame in DataFrame
+func (dframe *DataFrame) AddSignalFrame(symbol string, ema, bb, macd, rsi, willr bool) {
+	dframe.SignalFrame = GetSignalFrame(symbol, ema, bb, macd, rsi, willr)
+}
+
+// AddOptimizedParamFrame adds OptimizedParamFrame in DataFrame
+func (dframe *DataFrame) AddOptimizedParamFrame(symbol string) {
+	dframe.OptimizedParamFrame = GetOptimizedParamFrame(symbol)
 }
 
 // CandleFrame is candle data frame

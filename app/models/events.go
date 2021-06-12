@@ -13,6 +13,10 @@ type SignalEvents struct {
 
 // GetSignalFrame returns SignalFrame including a part of signal events
 func GetSignalFrame(symbol string, ema, bb, macd, rsi, willr bool) *SignalFrame {
+	if !(ema || bb || macd || rsi || willr){
+		return &SignalFrame{Signals: nil}
+	}
+
 	signalEvents := &SignalEvents{}
 
 	if ema {

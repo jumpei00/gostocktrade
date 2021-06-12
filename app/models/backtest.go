@@ -8,6 +8,38 @@ import (
 	"github.com/markcheno/go-talib"
 )
 
+// BackTestParam recieves some parameters used for backtest at json
+type BackTestParam struct {
+	Symbol              string  `json:"symbol"`
+	Period              int     `json:"period"`
+	EmaShortLow         int     `json:"ema_short_low"`
+	EmaShortHigh        int     `json:"ema_short_high"`
+	EmaLongLow          int     `json:"ema_long_low"`
+	EmaLongHigh         int     `json:"ema_long_high"`
+	BBnLow              int     `json:"bb_n_low"`
+	BBnHigh             int     `json:"bb_n_high"`
+	BBkLow              float64 `json:"bb_k_low"`
+	BBkHigh             float64 `json:"bb_k_high"`
+	MacdFastLow         int     `json:"macd_fast_low"`
+	MacdFastHigh        int     `json:"macd_fast_high"`
+	MacdSlowLow         int     `json:"macd_slow_low"`
+	MacdSlowHigh        int     `json:"macd_slow_high"`
+	MacdSignalLow       int     `json:"macd_signal_low"`
+	MacdSignalHigh      int     `json:"macd_signal_high"`
+	RsiPeriodLow        int     `json:"rsi_period_low"`
+	RsiPeriodHigh       int     `json:"rsi_period_high"`
+	RsiBuyThreadLow     float64 `json:"rsi_buythread_low"`
+	RsiBuyThreadHigh    float64 `json:"rsi_buythread_high"`
+	RsiSellThreadLow    float64 `json:"rsi_sellthread_low"`
+	RsiSellThreadHigh   float64 `json:"rsi_sellthread_high"`
+	WillrPeriodLow      int     `json:"willr_period_low"`
+	WillrPeriodHigh     int     `json:"willr_period_high"`
+	WillrBuyThreadLow   float64 `json:"willr_buythread_low"`
+	WillrBuyThreadHigh  float64 `json:"willr_buythread_high"`
+	WillrSellThreadLow  float64 `json:"willr_sellthread_low"`
+	WillrSellThreadHigh float64 `json:"willr_sellthread_high"`
+}
+
 // OptimizedParam is stored to optimized parameter for backtest,
 // also has relationships a part of signal results of backtest.
 type OptimizedParam struct {
@@ -65,7 +97,8 @@ func GetOptimizedParamFrame(symbol string) *OptimizedParamFrame {
 	err := DB.First(&op, OptimizedParam{Symbol: symbol})
 	if err.Error != nil {
 		// Not Found
-		return nil
+		opframe.Param = nil
+		return &opframe
 	}
 
 	opframe.Param = &op
@@ -73,18 +106,25 @@ func GetOptimizedParamFrame(symbol string) *OptimizedParamFrame {
 }
 
 // BackTest excecutes backtest
-func BackTest(symbol string, period int) *OptimizedParam {
-	cframe := GetCandleFrame(symbol, period)
+func (bt *BackTestParam) BackTest() *OptimizedParam {
+	DeleteBacktestResult(bt.Symbol)
 
-	bpEma, bpEmaShort, bpEmaLong := cframe.optimizeEma(5, 15, 12, 20)
-	bpBB, bpBBn, bpBBk := cframe.optimizeBB(10, 20, 1.8, 2.2)
-	bpMacd, bpMacdFast, bpMacdSlow, bpMacdSignal := cframe.optimizeMacd(10, 19, 20, 30, 5, 15)
-	bpRsi, bpRsiPeriod, bpRsiBuy, bpRsiSell := cframe.optimizeRsi(6, 30, 25, 35, 75, 85)
-	bpWillr, bpWillrPeriod, bpWillrBuy, bpWillrSell := cframe.optimizeWillr(5, 20, -25, -15, -85, -75)
+	cframe := GetCandleFrame(bt.Symbol, bt.Period)
+
+	bpEma, bpEmaShort, bpEmaLong := cframe.optimizeEma(
+		bt.EmaShortLow, bt.EmaShortHigh, bt.EmaLongLow, bt.EmaLongHigh)
+	bpBB, bpBBn, bpBBk := cframe.optimizeBB(
+		bt.BBnLow, bt.BBnHigh, bt.BBkLow, bt.BBkHigh)
+	bpMacd, bpMacdFast, bpMacdSlow, bpMacdSignal := cframe.optimizeMacd(
+		bt.MacdFastLow, bt.MacdFastHigh, bt.MacdSlowLow, bt.MacdSlowHigh, bt.MacdSignalLow, bt.MacdSignalHigh)
+	bpRsi, bpRsiPeriod, bpRsiBuy, bpRsiSell := cframe.optimizeRsi(
+		bt.RsiPeriodLow, bt.RsiPeriodHigh, bt.RsiBuyThreadLow, bt.RsiBuyThreadHigh, bt.RsiSellThreadLow, bt.RsiSellThreadHigh)
+	bpWillr, bpWillrPeriod, bpWillrBuy, bpWillrSell := cframe.optimizeWillr(
+		bt.WillrPeriodLow, bt.WillrPeriodHigh, bt.WillrBuyThreadLow, bt.WillrBuyThreadHigh, bt.WillrSellThreadLow, bt.WillrSellThreadHigh)
 
 	op := OptimizedParam{
 		Timestamp:        time.Now().Unix() * 1000,
-		Symbol:           symbol,
+		Symbol:           bt.Symbol,
 		EmaPerformance:   (math.Round(bpEma) / 100),
 		EmaShort:         bpEmaShort,
 		EmaLong:          bpEmaLong,
