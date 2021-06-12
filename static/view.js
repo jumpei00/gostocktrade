@@ -54,3 +54,22 @@ export function viewChart(symbol, json) {
         }]
     })
 }
+
+export function viewBacktestResults(tag, results) {
+    tag.innerHTML = "";
+    const time = new Date(results.timestamp)
+
+    tag.innerHTML = `
+        <p>Symbol: ${results.symbol} Latest Time: ${time.toString()}</p>
+        <input type="checkbox" id="ema">
+        [EMA] Performance: ${results.ema_performance} Short: ${results.ema_short} Long: ${results.ema_long}
+        <input type="checkbox" id="bb">
+        [BB] Performance: ${results.bb_performance} N: ${results.bb_n} K: ${results.bb_k}
+        <input type="checkbox" id="bb">
+        [MACD] Performance: ${results.macd_performance} Fast: ${results.macd_fast} Slow: ${results.macd_slow} Signal: ${results.macd_signal}
+        <input type="checkbox" id="bb">
+        [RSI] Performance: ${results.rsi_performance} Period: ${results.rsi_period} Buy: ${results.rsi_buythread} Sell: ${results.rsi_sellthread}
+        <input type="checkbox" id="bb">
+        [Willr] Performance: ${results.willr_performance} Period: ${results.willr_period} Buy: ${results.willr_buythread} Sell: ${results.willr_sellthread}
+    `
+}

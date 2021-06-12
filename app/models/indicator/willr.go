@@ -6,6 +6,16 @@ type Willr struct {
 	Values []float64 `json:"values,omitempty"`
 }
 
+// WillrBacktestParam represents some parameters used for backtest
+type WillrBacktestParam struct {
+	WillrPeriodLow      int     `json:"period_low"`
+	WillrPeriodHigh     int     `json:"period_high"`
+	WillrBuyThreadLow   float64 `json:"buy_low"`
+	WillrBuyThreadHigh  float64 `json:"buy_high"`
+	WillrSellThreadLow  float64 `json:"sell_low"`
+	WillrSellThreadHigh float64 `json:"sell_high"`
+}
+
 // WillrSignals stores WillrSignal
 type WillrSignals struct {
 	WillrSignals []WillrSignal
@@ -25,7 +35,7 @@ func (wi *WillrSignals) Buy(symbol string, time int64, price float64) bool {
 	if !(wi.CanBuy()) {
 		return false
 	}
-	wi.WillrSignals = append(wi.WillrSignals, WillrSignal{Symbol:symbol, Time: time, Price: price, Action: BUY})
+	wi.WillrSignals = append(wi.WillrSignals, WillrSignal{Symbol: symbol, Time: time, Price: price, Action: BUY})
 	return true
 }
 
@@ -49,7 +59,7 @@ func (wi *WillrSignals) Sell(symbol string, time int64, price float64) bool {
 	if !(wi.CanSell()) {
 		return false
 	}
-	wi.WillrSignals = append(wi.WillrSignals, WillrSignal{Symbol:symbol, Time: time, Price: price, Action: SELL})
+	wi.WillrSignals = append(wi.WillrSignals, WillrSignal{Symbol: symbol, Time: time, Price: price, Action: SELL})
 	return true
 }
 

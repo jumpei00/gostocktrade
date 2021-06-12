@@ -16,13 +16,62 @@
         <script type="module" src="/static/main.js"></script>
         <title>Stock</title>
     </head>
-    
+
     <body>
         <h2 id="realtime"></h2>
-        <button id="candlesGet">GET</button>
-        <input id="symbol" type="text" value="VOO">
-        <input id="period" type="text" value="365">
-        <div id="container" style= "max-height: 800px; min-height: 75vh;"></div>
+        <div id="candle">
+            <button id="get">GET</button>
+            symbol: <input id="symbol" type="text" value="VOO" style="width: 60px;">
+            period: <input id="period" type="text" value="365" style="width: 60px;">
+        </div>
+        <div id="backtest">
+            <button id="test">TEST</button>
+            period: <input id="period" type="text" value="365" style="width: 60px;">
+            <div id="params">
+                EMA Short:
+                <input id="ema_short_low" type="text" value="5" style="width: 25px;">〜
+                <input id="ema_short_high" type="text" value="20" style="width: 25px;">
+                EMA Long:
+                <input id="ema_long_low" type="text" value="12" style="width: 25px;">〜
+                <input id="ema_long_high" type="text" value="30" style="width: 25px;">
+                BB N:
+                <input id="bb_n_low" type="text" value="10" style="width: 25px;">〜
+                <input id="bb_n_high" type="text" value="30" style="width: 25px;">
+                BB K:
+                <input id="bb_k_low" type="text" value="1.5" style="width: 25px;">〜
+                <input id="bb_k_high" type="text" value="2.5" style="width: 25px;">
+                MACD Fast:
+                <input id="macd_fast_low" type="text" value="5" style="width: 25px;">〜
+                <input id="macd_fast_high" type="text" value="20" style="width: 25px;">
+                MACD Slow:
+                <input id="macd_slow_low" type="text" value="15" style="width: 25px;">〜
+                <input id="macd_slow_high" type="text" value="30" style="width: 25px;">
+                MACD Signal:
+                <input id="macd_signal_low" type="text" value="5" style="width: 25px;">〜
+                <input id="macd_signal_high" type="text" value="20"style="width: 25px;">
+                <br>
+                RSI Period: 
+                <input id="rsi_period_low" type="text" value="5" style="width: 25px;">〜
+                <input id="rsi_period_high" type="text" value="50" style="width: 25px;">
+                RSI Buy:
+                <input id="rsi_buy_low" type="text" value="25" style="width: 25px;">〜
+                <input id="rsi_buy_high" type="text" value="35" style="width: 25px;">
+                RSI Sell:
+                <input id="rsi_sell_low" type="text" value="65" style="width: 25px;">〜
+                <input id="rsi_sell_high" type="text" value="75" style="width: 25px;">
+                Willr Period: 
+                <input id="willr_period_low" type="text" value="5" style="width: 25px;">〜
+                <input id="willr_period_high" type="text" value="50" style="width: 25px;">
+                Willr Buy:
+                -<input id="willr_buy_low" type="text" value="85" style="width: 25px;">〜
+                -<input id="willr_buy_high" type="text" value="75" style="width: 25px;">
+                Willr Sell:
+                -<input id="willr_sell_low" type="text" value="25" style="width: 25px;">〜
+                -<input id="willr_sell_high" type="text" value="15" style="width: 25px;">
+            </div>
+            <div id="results"></div>
+        </div>
+        <div id="container" style="max-height: 800px; min-height: 75vh;"></div>
     </body>
 
 </html>
