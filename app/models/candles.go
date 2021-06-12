@@ -65,13 +65,3 @@ func GetCandleFrame(symbol string, limit int) *CandleFrame {
 
 	return &cframe
 }
-
-// GetDataFrameInCandles is warapper of GetCandles to return DataFrame
-func GetDataFrameInCandles(symbol string, limit int) *DataFrame {
-	cframe := GetCandleFrame(symbol, limit)
-
-	dframe := DataFrame{}
-	dframe.CandleFrame = cframe
-
-	return &dframe
-}
