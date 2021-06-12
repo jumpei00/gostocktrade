@@ -6,6 +6,16 @@ type Rsi struct {
 	Values []float64 `json:"values,omitempty"`
 }
 
+// RsiBacktestParam represents some parameters used for backtest
+type RsiBacktestParam struct {
+	RsiPeriodLow      int     `json:"period_low"`
+	RsiPeriodHigh     int     `json:"period_high"`
+	RsiBuyThreadLow   float64 `json:"buy_low"`
+	RsiBuyThreadHigh  float64 `json:"buy_high"`
+	RsiSellThreadLow  float64 `json:"sell_low"`
+	RsiSellThreadHigh float64 `json:"sell_high"`
+}
+
 // RsiSignals stores EmaSignal
 type RsiSignals struct {
 	RsiSignals []RsiSignal
@@ -25,7 +35,7 @@ func (rsi *RsiSignals) Buy(symbol string, time int64, price float64) bool {
 	if !(rsi.CanBuy()) {
 		return false
 	}
-	rsi.RsiSignals = append(rsi.RsiSignals, RsiSignal{Symbol:symbol, Time: time, Price: price, Action: BUY})
+	rsi.RsiSignals = append(rsi.RsiSignals, RsiSignal{Symbol: symbol, Time: time, Price: price, Action: BUY})
 	return true
 }
 
@@ -49,7 +59,7 @@ func (rsi *RsiSignals) Sell(symbol string, time int64, price float64) bool {
 	if !(rsi.CanSell()) {
 		return false
 	}
-	rsi.RsiSignals = append(rsi.RsiSignals, RsiSignal{Symbol:symbol, Time: time, Price: price, Action: SELL})
+	rsi.RsiSignals = append(rsi.RsiSignals, RsiSignal{Symbol: symbol, Time: time, Price: price, Action: SELL})
 	return true
 }
 

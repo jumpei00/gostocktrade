@@ -9,6 +9,14 @@ type BBands struct {
 	Low []float64 `json:"low,omitempty"`
 }
 
+// BBBacktestParam represents some parameters used for backtest
+type BBBacktestParam struct {
+	BBnLow  int     `json:"n_low"`
+	BBnHigh int     `json:"n_high"`
+	BBkLow  float64 `json:"k_low"`
+	BBkHigh float64 `json:"k_high"`
+}
+
 // BBSignals stores EmaSignal
 type BBSignals struct {
 	BBSignals []BBSignal
@@ -28,7 +36,7 @@ func (bb *BBSignals) Buy(symbol string, time int64, price float64) bool {
 	if !(bb.CanBuy()) {
 		return false
 	}
-	bb.BBSignals = append(bb.BBSignals, BBSignal{Symbol:symbol, Time: time, Price: price, Action: BUY})
+	bb.BBSignals = append(bb.BBSignals, BBSignal{Symbol: symbol, Time: time, Price: price, Action: BUY})
 	return true
 }
 
@@ -52,7 +60,7 @@ func (bb *BBSignals) Sell(symbol string, time int64, price float64) bool {
 	if !(bb.CanSell()) {
 		return false
 	}
-	bb.BBSignals = append(bb.BBSignals, BBSignal{Symbol:symbol, Time: time, Price: price, Action: SELL})
+	bb.BBSignals = append(bb.BBSignals, BBSignal{Symbol: symbol, Time: time, Price: price, Action: SELL})
 	return true
 }
 

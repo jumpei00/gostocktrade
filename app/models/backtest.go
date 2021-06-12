@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
 	"time"
 
@@ -10,34 +11,13 @@ import (
 
 // BackTestParam recieves some parameters used for backtest at json
 type BackTestParam struct {
-	Symbol              string  `json:"symbol"`
-	Period              int     `json:"period"`
-	EmaShortLow         int     `json:"ema_short_low"`
-	EmaShortHigh        int     `json:"ema_short_high"`
-	EmaLongLow          int     `json:"ema_long_low"`
-	EmaLongHigh         int     `json:"ema_long_high"`
-	BBnLow              int     `json:"bb_n_low"`
-	BBnHigh             int     `json:"bb_n_high"`
-	BBkLow              float64 `json:"bb_k_low"`
-	BBkHigh             float64 `json:"bb_k_high"`
-	MacdFastLow         int     `json:"macd_fast_low"`
-	MacdFastHigh        int     `json:"macd_fast_high"`
-	MacdSlowLow         int     `json:"macd_slow_low"`
-	MacdSlowHigh        int     `json:"macd_slow_high"`
-	MacdSignalLow       int     `json:"macd_signal_low"`
-	MacdSignalHigh      int     `json:"macd_signal_high"`
-	RsiPeriodLow        int     `json:"rsi_period_low"`
-	RsiPeriodHigh       int     `json:"rsi_period_high"`
-	RsiBuyThreadLow     float64 `json:"rsi_buythread_low"`
-	RsiBuyThreadHigh    float64 `json:"rsi_buythread_high"`
-	RsiSellThreadLow    float64 `json:"rsi_sellthread_low"`
-	RsiSellThreadHigh   float64 `json:"rsi_sellthread_high"`
-	WillrPeriodLow      int     `json:"willr_period_low"`
-	WillrPeriodHigh     int     `json:"willr_period_high"`
-	WillrBuyThreadLow   float64 `json:"willr_buythread_low"`
-	WillrBuyThreadHigh  float64 `json:"willr_buythread_high"`
-	WillrSellThreadLow  float64 `json:"willr_sellthread_low"`
-	WillrSellThreadHigh float64 `json:"willr_sellthread_high"`
+	Symbol string                        `json:"symbol"`
+	Period int                           `json:"period"`
+	Ema    *indicator.EmaBacktestParam   `json:"ema"`
+	BB     *indicator.BBBacktestParam    `json:"bb"`
+	Macd   *indicator.MacdBacktestParam  `json:"macd"`
+	Rsi    *indicator.RsiBacktestParam   `json:"rsi"`
+	Willr  *indicator.WillrBacktestParam `json:"willr"`
 }
 
 // OptimizedParam is stored to optimized parameter for backtest,
@@ -64,11 +44,11 @@ type OptimizedParam struct {
 	WillrPeriod      int                     `json:"willr_period"`
 	WillrBuyThread   float64                 `json:"willr_buythread"`
 	WillrSellThread  float64                 `json:"willr_sellthread"`
-	EmaSignals       []indicator.EmaSignal   `gorm:"foreignKey:Symbol;references:Symbol"`
-	BBSignals        []indicator.BBSignal    `gorm:"foreignKey:Symbol;references:Symbol"`
-	MacdSignals      []indicator.MacdSignal  `gorm:"foreignKey:Symbol;references:Symbol"`
-	RsiSignals       []indicator.RsiSignal   `gorm:"foreignKey:Symbol;references:Symbol"`
-	WillrSignals     []indicator.WillrSignal `gorm:"foreignKey:Symbol;references:Symbol"`
+	EmaSignals       []indicator.EmaSignal   `gorm:"foreignKey:Symbol;references:Symbol" json:"-"`
+	BBSignals        []indicator.BBSignal    `gorm:"foreignKey:Symbol;references:Symbol" json:"-"`
+	MacdSignals      []indicator.MacdSignal  `gorm:"foreignKey:Symbol;references:Symbol" json:"-"`
+	RsiSignals       []indicator.RsiSignal   `gorm:"foreignKey:Symbol;references:Symbol" json:"-"`
+	WillrSignals     []indicator.WillrSignal `gorm:"foreignKey:Symbol;references:Symbol" json:"-"`
 }
 
 // CreateBacktestResult creates new backtest results, but before create, you delete existing data, beforehand
@@ -110,36 +90,40 @@ func (bt *BackTestParam) BackTest() *OptimizedParam {
 	DeleteBacktestResult(bt.Symbol)
 
 	cframe := GetCandleFrame(bt.Symbol, bt.Period)
+	logrus.Infof("backtest start: %v, %v", bt.Symbol, bt.Period)
 
 	bpEma, bpEmaShort, bpEmaLong := cframe.optimizeEma(
-		bt.EmaShortLow, bt.EmaShortHigh, bt.EmaLongLow, bt.EmaLongHigh)
+		bt.Ema.EmaShortLow, bt.Ema.EmaShortHigh, bt.Ema.EmaLongLow, bt.Ema.EmaLongHigh)
 	bpBB, bpBBn, bpBBk := cframe.optimizeBB(
-		bt.BBnLow, bt.BBnHigh, bt.BBkLow, bt.BBkHigh)
+		bt.BB.BBnLow, bt.BB.BBnHigh, bt.BB.BBkLow, bt.BB.BBkHigh)
 	bpMacd, bpMacdFast, bpMacdSlow, bpMacdSignal := cframe.optimizeMacd(
-		bt.MacdFastLow, bt.MacdFastHigh, bt.MacdSlowLow, bt.MacdSlowHigh, bt.MacdSignalLow, bt.MacdSignalHigh)
+		bt.Macd.MacdFastLow, bt.Macd.MacdFastHigh, bt.Macd.MacdSlowLow, bt.Macd.MacdSlowHigh,
+		bt.Macd.MacdSignalLow, bt.Macd.MacdSignalHigh)
 	bpRsi, bpRsiPeriod, bpRsiBuy, bpRsiSell := cframe.optimizeRsi(
-		bt.RsiPeriodLow, bt.RsiPeriodHigh, bt.RsiBuyThreadLow, bt.RsiBuyThreadHigh, bt.RsiSellThreadLow, bt.RsiSellThreadHigh)
+		bt.Rsi.RsiPeriodLow, bt.Rsi.RsiPeriodHigh, bt.Rsi.RsiBuyThreadLow, bt.Rsi.RsiBuyThreadHigh,
+		bt.Rsi.RsiSellThreadLow, bt.Rsi.RsiSellThreadHigh)
 	bpWillr, bpWillrPeriod, bpWillrBuy, bpWillrSell := cframe.optimizeWillr(
-		bt.WillrPeriodLow, bt.WillrPeriodHigh, bt.WillrBuyThreadLow, bt.WillrBuyThreadHigh, bt.WillrSellThreadLow, bt.WillrSellThreadHigh)
+		bt.Willr.WillrPeriodLow, bt.Willr.WillrPeriodHigh, bt.Willr.WillrBuyThreadLow, bt.Willr.WillrBuyThreadHigh,
+		bt.Willr.WillrSellThreadLow, bt.Willr.WillrSellThreadHigh)
 
 	op := OptimizedParam{
 		Timestamp:        time.Now().Unix() * 1000,
 		Symbol:           bt.Symbol,
-		EmaPerformance:   (math.Round(bpEma) / 100),
+		EmaPerformance:   math.Round(bpEma * 100) / 100,
 		EmaShort:         bpEmaShort,
 		EmaLong:          bpEmaLong,
-		BBPerformance:    (math.Round(bpBB) / 100),
+		BBPerformance:    math.Round(bpBB * 100) / 100,
 		BBn:              bpBBn,
-		BBk:              bpBBk,
-		MacdPerformance:  (math.Round(bpMacd) / 100),
+		BBk:              math.Round(bpBBk * 10) / 10,
+		MacdPerformance:  math.Round(bpMacd * 100) / 100,
 		MacdFast:         bpMacdFast,
 		MacdSlow:         bpMacdSlow,
 		MacdSignal:       bpMacdSignal,
-		RsiPerformance:   (math.Round(bpRsi) / 100),
+		RsiPerformance:   math.Round(bpRsi * 100) / 100,
 		RsiPeriod:        bpRsiPeriod,
 		RsiBuyThread:     bpRsiBuy,
 		RsiSellThread:    bpRsiSell,
-		WillrPerformance: (math.Round(bpWillr) / 100),
+		WillrPerformance: math.Round(bpWillr * 100) / 100,
 		WillrPeriod:      bpWillrPeriod,
 		WillrBuyThread:   bpWillrBuy,
 		WillrSellThread:  bpWillrSell,
@@ -155,6 +139,7 @@ func (bt *BackTestParam) BackTest() *OptimizedParam {
 
 func (cframe *CandleFrame) optimizeEma(
 	lowShort, highShort, lowLong, highLong int) (bestPerformance float64, bestShort, bestLong int) {
+	logrus.Infof("Ema backtest start: paramas -> %v, %v, %v %v", lowShort, highShort, lowLong, highLong)
 
 	profit := 0.0
 	bestShort = 7
@@ -176,6 +161,7 @@ func (cframe *CandleFrame) optimizeEma(
 		}
 	}
 
+	logrus.Infof("Ema backtest end: results -> %v, %v, %v", bestPerformance, bestShort, bestLong)
 	return bestPerformance, bestShort, bestLong
 }
 
@@ -210,6 +196,7 @@ func (cframe *CandleFrame) backtestEma(short int, long int) *indicator.EmaSignal
 
 func (cframe *CandleFrame) optimizeBB(
 	lowN, highN int, lowK, highK float64) (bestPerformance float64, bestN int, bestK float64) {
+	logrus.Infof("BB backtest start: paramas -> %v, %v, %v %v", lowN, highN, lowK, highK)
 
 	profit := 0.0
 	bestN = 20
@@ -230,6 +217,7 @@ func (cframe *CandleFrame) optimizeBB(
 		}
 	}
 
+	logrus.Infof("BB backtest end: results -> %v, %v, %v", bestPerformance, bestN, bestK)
 	return bestPerformance, bestN, bestK
 }
 
@@ -263,6 +251,7 @@ func (cframe *CandleFrame) backtestBB(N int, K float64) *indicator.BBSignals {
 
 func (cframe *CandleFrame) optimizeMacd(
 	lowFast, highFast, lowSlow, highSlow, lowSignal, highSignal int) (bestPerformance float64, bestFast, bestSlow, bestSignal int) {
+	logrus.Infof("Macd backtest start: paramas -> %v, %v, %v %v, %v, %v", lowFast, highFast, lowSlow, highSlow, lowSignal, highSignal)
 
 	profit := 0.0
 	bestFast = 12
@@ -288,6 +277,7 @@ func (cframe *CandleFrame) optimizeMacd(
 		}
 	}
 
+	logrus.Infof("Macd backtest end: results -> %v, %v, %v %v", bestPerformance, bestFast, bestSlow, bestSignal)
 	return bestPerformance, bestFast, bestSlow, bestSignal
 }
 
@@ -322,6 +312,7 @@ func (cframe *CandleFrame) backtestMacd(fast, slow, signal int) *indicator.MacdS
 func (cframe *CandleFrame) optimizeRsi(
 	lowPeriod, highPeriod int,
 	lowBuyThread, highBuyThread, lowSellThread, highSellThread float64) (bestPerformance float64, bestPeriod int, bestBuyThread, bestSellThread float64) {
+	logrus.Infof("Rsi backtest start: paramas -> %v, %v, %v %v, %v, %v", lowPeriod, highPeriod, lowBuyThread, highBuyThread, lowSellThread, highSellThread)
 
 	profit := 0.0
 	bestPeriod = 14
@@ -346,6 +337,7 @@ func (cframe *CandleFrame) optimizeRsi(
 		}
 	}
 
+	logrus.Infof("Rsi backtest end: results -> %v, %v, %v %v", bestPerformance, bestPeriod, bestBuyThread, bestSellThread)
 	return bestPerformance, bestPeriod, bestBuyThread, bestSellThread
 }
 
@@ -380,6 +372,7 @@ func (cframe *CandleFrame) backtestRsi(period int, buyThread, sellThread float64
 func (cframe *CandleFrame) optimizeWillr(
 	lowPeriod, highPeriod int,
 	lowBuyThread, highBuyThread, lowSellThread, highSellThread float64) (bestPerformance float64, bestPeriod int, bestBuyThread, bestSellThread float64) {
+	logrus.Infof("Willr backtest start: paramas -> %v, %v, %v %v, %v, %v", lowPeriod, highPeriod, lowBuyThread, highBuyThread, lowSellThread, highSellThread)
 
 	profit := 0.0
 	bestPeriod = 10
@@ -404,6 +397,7 @@ func (cframe *CandleFrame) optimizeWillr(
 		}
 	}
 
+	logrus.Infof("Willr backtest end: results -> %v, %v, %v %v", bestPerformance, bestPeriod, bestBuyThread, bestSellThread)
 	return bestPerformance, bestPeriod, bestBuyThread, bestSellThread
 }
 

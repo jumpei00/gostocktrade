@@ -6,6 +6,14 @@ type Ema struct {
 	Values []float64 `json:"values,omitempty"`
 }
 
+// EmaBacktestParam represents some parameters used for backtest
+type EmaBacktestParam struct {
+	EmaShortLow  int `json:"short_low"`
+	EmaShortHigh int `json:"short_high"`
+	EmaLongLow   int `json:"long_low"`
+	EmaLongHigh  int `json:"long_high"`
+}
+
 // EmaSignals stores EmaSignal
 type EmaSignals struct {
 	EmaSignals []EmaSignal

@@ -10,6 +10,16 @@ type Macd struct {
 	MacdHist   []float64 `json:"macd_hist,omitempty"`
 }
 
+// MacdBacktestParam represents some parameters used for backtest
+type MacdBacktestParam struct {
+	MacdFastLow    int `json:"fast_low"`
+	MacdFastHigh   int `json:"fast_high"`
+	MacdSlowLow    int `json:"slow_low"`
+	MacdSlowHigh   int `json:"slow_high"`
+	MacdSignalLow  int `json:"signal_low"`
+	MacdSignalHigh int `json:"signal_high"`
+}
+
 // MacdSignals stores EmaSignal
 type MacdSignals struct {
 	MacdSignals []MacdSignal
@@ -29,7 +39,7 @@ func (md *MacdSignals) Buy(symbol string, time int64, price float64) bool {
 	if !(md.CanBuy()) {
 		return false
 	}
-	md.MacdSignals = append(md.MacdSignals, MacdSignal{Symbol:symbol, Time: time, Price: price, Action: BUY})
+	md.MacdSignals = append(md.MacdSignals, MacdSignal{Symbol: symbol, Time: time, Price: price, Action: BUY})
 	return true
 }
 
@@ -53,7 +63,7 @@ func (md *MacdSignals) Sell(symbol string, time int64, price float64) bool {
 	if !(md.CanSell()) {
 		return false
 	}
-	md.MacdSignals = append(md.MacdSignals, MacdSignal{Symbol:symbol, Time: time, Price: price, Action: SELL})
+	md.MacdSignals = append(md.MacdSignals, MacdSignal{Symbol: symbol, Time: time, Price: price, Action: SELL})
 	return true
 }
 
