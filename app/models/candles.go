@@ -26,16 +26,16 @@ type Candle struct {
 // ex) [Date[1, 2, 3...], Open[1, 2, 3...]...] → [[Date[1], Open[1]...], [Date[2], Open[2]...]...]
 // and return pointer of Candles(used as constructor)
 // Because of using for frondend, this method also converts time to Unixtime
-func NewCandlesFromQuote(stock *quote.Quote) *Candles {
+func NewCandlesFromQuote(adjStock *quote.Quote, Stock *quote.Quote) *Candles {
 	candles := Candles{}
-	for i := 0; i < len(stock.Date); i++ {
+	for i := 0; i < len(Stock.Date); i++ {
 		candles = append(candles, Candle{
-			Time:   stock.Date[i].Unix() * 1000,
-			Open:   (math.Round(stock.Open[i]*100) / 100),
-			High:   (math.Round(stock.High[i]*100) / 100),
-			Low:    (math.Round(stock.Low[i]*100) / 100),
-			Close:  (math.Round(stock.Close[i]*100) / 100),
-			Volume: (math.Round(stock.Volume[i]*100) / 100),
+			Time:   Stock.Date[i].Unix() * 1000,
+			Open:   (math.Round(adjStock.Open[i]*100) / 100),
+			High:   (math.Round(adjStock.High[i]*100) / 100),
+			Low:    (math.Round(adjStock.Low[i]*100) / 100),
+			Close:  (math.Round(Stock.Close[i]*100) / 100),
+			Volume: (math.Round(adjStock.Volume[i]*100) / 100),
 		})
 	}
 

@@ -56,15 +56,16 @@ func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 
 	// Downloads stock data
 	if get {
-		stockData, err := stock.GetStockData(symbol, period)
-		if err != nil {
-			logrus.Warnf("stock get error: %v", err)
-			errorAPI(w, fmt.Sprintf("stock get error: %v", err), http.StatusInternalServerError)
+		adjStock, err1 := stock.GetStockData(symbol, period, true)
+		Stock, err2 := stock.GetStockData(symbol, period, false)
+		if err1 != nil || err2 != nil {
+			logrus.Warnf("stock get error: %v, %v", err1, err2)
+			errorAPI(w, fmt.Sprintf("stock get error: %v, %v", err1, err2), http.StatusInternalServerError)
 			return
 		}
 		// After delete existing data, store stock data in DB
 		models.AllDeleteCandles()
-		models.NewCandlesFromQuote(stockData).CreateCandles()
+		models.NewCandlesFromQuote(adjStock, Stock).CreateCandles()
 		dframe.AddCandleFrame(symbol, period)
 		dframe.AddOptimizedParamFrame(symbol)
 	}
