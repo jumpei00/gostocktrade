@@ -36,13 +36,19 @@ func indexAPIHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
+	logrus.Infof("candle get request: url -> %s", req.URL)
+
 	get, _ := strconv.ParseBool(req.URL.Query().Get("get"))
 	symbol := req.URL.Query().Get("symbol")
 	period, err := strconv.Atoi(req.URL.Query().Get("period"))
-	logrus.Infof("candle get request: params -> %v, %v, %v", get, symbol, period)
 
-	if symbol == "" || err != nil {
-		errorAPI(w, "bad parameter(symbol, period)", http.StatusBadRequest)
+	if symbol == "" {
+		errorAPI(w, "bad parameter(symbol)", http.StatusBadRequest)
+		return
+	}
+
+	if get && err != nil {
+		errorAPI(w, "bad parameter(get, symbol)", http.StatusBadRequest)
 		return
 	}
 
@@ -60,6 +66,7 @@ func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 		models.AllDeleteCandles()
 		models.NewCandlesFromQuote(stockData).CreateCandles()
 		dframe.AddCandleFrame(symbol, period)
+		dframe.AddOptimizedParamFrame(symbol)
 	}
 
 	ema, _ := strconv.ParseBool(req.URL.Query().Get("ema"))
