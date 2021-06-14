@@ -12,16 +12,13 @@ const timeFormat = "2006-01-02"
 // GetStockData dawnloads daily stockdata for symbol(GOOGL, FB...etc) during today ~ before dayPeriod.
 // dayPeriod must be day(1day, 30days...etc).
 // If stock data is not dawnloaded due to bad symbol, output panic.
-func GetStockData(symbol string, dayPeriod int) (*quote.Quote, error) {
+func GetStockData(symbol string, dayPeriod int, adj bool) (*quote.Quote, error) {
 	endDay := time.Now()
 	startDay := endDay.AddDate(0, 0, -dayPeriod)
 
 	logrus.Info("get stock data from yahoo")
 	stock, err := quote.NewQuoteFromYahoo(
-		symbol, startDay.Format(timeFormat), endDay.Format(timeFormat), quote.Daily, true)
-	if err != nil {
-		return nil, err
-	}
+		symbol, startDay.Format(timeFormat), endDay.Format(timeFormat), quote.Daily, adj)
 
-	return &stock, nil
+	return &stock, err
 }
