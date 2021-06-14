@@ -26,6 +26,7 @@ const backtest_params = {
     }
 }
 
+// settings params sending server
 export function mappingParams(params) {
     backtest_params.ema.short_low = +params.querySelector("#ema_short_low").value
     backtest_params.ema.short_high = +params.querySelector("#ema_short_high").value
@@ -71,6 +72,7 @@ export async function candleGetRequest(uri, query) {
     return response.json()
 }
 
+// backtestRequest fetches any data from server, return json
 // backtestRequest is only used to execute backtest
 export async function backtestRequest(uri, params) {
     let response = await fetch(uri, {
@@ -85,5 +87,15 @@ export async function backtestRequest(uri, params) {
         throw new Error(`HTTP error, status: ${response.status}`)
     }
 
+    return response.json()
+}
+
+// signalRequest fetches any data from server, return json
+// signalRequest is only used to get signals(BUY or SELL)
+export async function signalRequest(uri, query) {
+    let response = await fetch(uri + "?" + query)
+    if (!response.ok) {
+        throw new Error(`HTTP error, status: ${response.status}`)
+    }
     return response.json()
 }

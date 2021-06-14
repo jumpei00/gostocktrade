@@ -1,9 +1,10 @@
 package models
 
 import (
-	"github.com/sirupsen/logrus"
 	"math"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/jumpei00/gostocktrade/app/models/indicator"
 	"github.com/markcheno/go-talib"
@@ -109,21 +110,21 @@ func (bt *BackTestParam) BackTest() *OptimizedParam {
 	op := OptimizedParam{
 		Timestamp:        time.Now().Unix() * 1000,
 		Symbol:           bt.Symbol,
-		EmaPerformance:   math.Round(bpEma * 100) / 100,
+		EmaPerformance:   math.Round(bpEma*100) / 100,
 		EmaShort:         bpEmaShort,
 		EmaLong:          bpEmaLong,
-		BBPerformance:    math.Round(bpBB * 100) / 100,
+		BBPerformance:    math.Round(bpBB*100) / 100,
 		BBn:              bpBBn,
-		BBk:              math.Round(bpBBk * 10) / 10,
-		MacdPerformance:  math.Round(bpMacd * 100) / 100,
+		BBk:              math.Round(bpBBk*10) / 10,
+		MacdPerformance:  math.Round(bpMacd*100) / 100,
 		MacdFast:         bpMacdFast,
 		MacdSlow:         bpMacdSlow,
 		MacdSignal:       bpMacdSignal,
-		RsiPerformance:   math.Round(bpRsi * 100) / 100,
+		RsiPerformance:   math.Round(bpRsi*100) / 100,
 		RsiPeriod:        bpRsiPeriod,
 		RsiBuyThread:     bpRsiBuy,
 		RsiSellThread:    bpRsiSell,
-		WillrPerformance: math.Round(bpWillr * 100) / 100,
+		WillrPerformance: math.Round(bpWillr*100) / 100,
 		WillrPeriod:      bpWillrPeriod,
 		WillrBuyThread:   bpWillrBuy,
 		WillrSellThread:  bpWillrSell,

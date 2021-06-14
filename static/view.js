@@ -1,3 +1,20 @@
+const chart = Highcharts.stockChart("container", {
+    rangeSelector: {
+        selected: 5,
+    },
+
+    title: {
+        text: `Ticker: `
+    },
+
+    yAxis: [
+        { height: "60%" },
+        { top: "60%", height: "35%", offset: 0 }
+    ],
+
+    series: []
+})
+
 // viewRealTime views current datetime on a window
 export function viewRealTime() {
     const realtimeID = document.querySelector("#realtime");
@@ -6,7 +23,8 @@ export function viewRealTime() {
     }, 100);
 }
 
-// viewChart views HighstockChart, also time parameter is converted due to highchart specification
+// viewChart views HighstockChart
+// also, brefore views, all current graphs are deleted
 export function viewChart(symbol, json) {
     let candles = [];
     let volume = [];
@@ -25,51 +43,103 @@ export function viewChart(symbol, json) {
         ])
     }
 
-    Highcharts.stockChart("container", {
-        rangeSelector: {
-            selected: 5,
-        },
+    // all delete
+    while (chart.series.length) {
+        chart.series[0].remove();
+    }
 
+    chart.update({
         title: {
             text: `Ticker: ${symbol}`
-        },
+        }
+    })
 
-        yAxis: [
-            { height: "60%" },
-            { top: "60%", height: "35%", offset: 0 }
-        ],
-
-        series: [{
+    chart.addSeries(
+        {
             type: "candlestick",
             id: `${symbol} chart`,
             name: `${symbol} Stock Price`,
             data: candles,
-        },
+        }
+    )
+
+    chart.addSeries(
         {
             type: "column",
             id: `${symbol} volume`,
             name: `${symbol} Volume`,
             data: volume,
             yAxis: 1
-        }]
-    })
+        }
+    )
 }
 
-export function viewBacktestResults(tag, results) {
-    tag.innerHTML = "";
+// viewBacktestResults views optimized params,
+// when optimized params exists, it's viewed, when no, it's cleared
+export function viewBacktestResults(results_element, results, onchangeFunc) {
+    results_element.innerHTML = "";
+    
+    // no data
+    if (results == undefined) {
+        return
+    }
+
     const time = new Date(results.timestamp)
 
-    tag.innerHTML = `
+    results_element.innerHTML = `
         <p>Symbol: ${results.symbol} Latest Time: ${time.toString()}</p>
-        <input type="checkbox" id="ema">
+        <input type="checkbox" id="signal" value="ema">
         [EMA] Performance: ${results.ema_performance} Short: ${results.ema_short} Long: ${results.ema_long}
-        <input type="checkbox" id="bb">
+        <input type="checkbox" id="signal" value="bb">
         [BB] Performance: ${results.bb_performance} N: ${results.bb_n} K: ${results.bb_k}
-        <input type="checkbox" id="bb">
+        <input type="checkbox" id="signal" value="macd">
         [MACD] Performance: ${results.macd_performance} Fast: ${results.macd_fast} Slow: ${results.macd_slow} Signal: ${results.macd_signal}
-        <input type="checkbox" id="bb">
+        <input type="checkbox" id="signal" value="rsi">
         [RSI] Performance: ${results.rsi_performance} Period: ${results.rsi_period} Buy: ${results.rsi_buythread} Sell: ${results.rsi_sellthread}
-        <input type="checkbox" id="bb">
+        <input type="checkbox" id="signal" value="willr">
         [Willr] Performance: ${results.willr_performance} Period: ${results.willr_period} Buy: ${results.willr_buythread} Sell: ${results.willr_sellthread}
     `
+
+    // setting eventListener function for a part of signal
+    const signals = results_element.querySelectorAll("#signal");
+    for (let i = 0; i < signals.length; i++) {
+        signals[i].addEventListener("change", () => {
+            onchangeFunc(signals[i]);
+        })
+    }
+}
+
+// viewSignal views signal(BUY or SELL) for some indicators, when checkbox is checked
+export function viewSignal(symbol, signalName, signals) {
+    let data = []
+    for (let signal of signals[`${signalName}_signals`]) {
+        data.push(
+            {
+                x: signal.time,
+                title: signal.action,
+                text: signalName
+            }
+        )
+    }
+
+    chart.addSeries(
+        {
+            type: "flags",
+            onSeries: `${symbol} chart`,
+            name: signalName,
+            shape: "squarepin",
+            width: 20,
+            data: data
+        }
+    )
+}
+
+// viewSignal unviews signal(BUY or SELL) for some indicators, when checkbox is unchecked
+export function removeSignal(signalName) {
+    for (let i = 0; i < chart.series.length; i++){
+        if (chart.series[i].name == signalName) {
+            chart.series[i].remove();
+            return
+        }
+    }
 }
