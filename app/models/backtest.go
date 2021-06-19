@@ -128,11 +128,11 @@ func (bt *BackTestParam) BackTest() *OptimizedParam {
 		WillrPeriod:      bpWillrPeriod,
 		WillrBuyThread:   bpWillrBuy,
 		WillrSellThread:  bpWillrSell,
-		EmaSignals:       cframe.backtestEma(bpEmaShort, bpEmaLong).EmaSignals,
-		BBSignals:        cframe.backtestBB(bpBBn, bpBBk).BBSignals,
-		MacdSignals:      cframe.backtestMacd(bpMacdFast, bpMacdSlow, bpMacdSignal).MacdSignals,
-		RsiSignals:       cframe.backtestRsi(bpRsiPeriod, bpRsiBuy, bpRsiSell).RsiSignals,
-		WillrSignals:     cframe.backtestWillr(bpWillrPeriod, bpWillrBuy, bpWillrSell).WillrSignals,
+		EmaSignals:       cframe.backtestEma(1, bpEmaShort, bpEmaLong).EmaSignals,
+		BBSignals:        cframe.backtestBB(1, bpBBn, bpBBk).BBSignals,
+		MacdSignals:      cframe.backtestMacd(1, bpMacdFast, bpMacdSlow, bpMacdSignal).MacdSignals,
+		RsiSignals:       cframe.backtestRsi(1, bpRsiPeriod, bpRsiBuy, bpRsiSell).RsiSignals,
+		WillrSignals:     cframe.backtestWillr(1, bpWillrPeriod, bpWillrBuy, bpWillrSell).WillrSignals,
 	}
 
 	return &op
@@ -148,7 +148,7 @@ func (cframe *CandleFrame) optimizeEma(
 
 	for short := lowShort; short <= highShort; short++ {
 		for long := lowLong; long <= highLong; long++ {
-			signals := cframe.backtestEma(short, long)
+			signals := cframe.backtestEma(1, short, long)
 			if signals == nil {
 				continue
 			}
@@ -166,7 +166,7 @@ func (cframe *CandleFrame) optimizeEma(
 	return bestPerformance, bestShort, bestLong
 }
 
-func (cframe *CandleFrame) backtestEma(short int, long int) *indicator.EmaSignals {
+func (cframe *CandleFrame) backtestEma(startDay, short int, long int) *indicator.EmaSignals {
 	candles := cframe.Candles
 	lenCandles := len(candles)
 
@@ -178,7 +178,7 @@ func (cframe *CandleFrame) backtestEma(short int, long int) *indicator.EmaSignal
 	shortEma := talib.Ema(cframe.Closes(), short)
 	longEma := talib.Ema(cframe.Closes(), long)
 
-	for day := 1; day < lenCandles; day++ {
+	for day := startDay; day < lenCandles; day++ {
 		if day < short || day < long {
 			continue
 		}
@@ -205,7 +205,7 @@ func (cframe *CandleFrame) optimizeBB(
 
 	for n := lowN; n <= highN; n++ {
 		for k := lowK; k <= highK; k += 0.1 {
-			signals := cframe.backtestBB(n, k)
+			signals := cframe.backtestBB(1, n, k)
 			if signals == nil {
 				continue
 			}
@@ -222,7 +222,7 @@ func (cframe *CandleFrame) optimizeBB(
 	return bestPerformance, bestN, bestK
 }
 
-func (cframe *CandleFrame) backtestBB(N int, K float64) *indicator.BBSignals {
+func (cframe *CandleFrame) backtestBB(startDay, N int, K float64) *indicator.BBSignals {
 	candles := cframe.Candles
 	lenCandles := len(candles)
 
@@ -233,7 +233,7 @@ func (cframe *CandleFrame) backtestBB(N int, K float64) *indicator.BBSignals {
 	signals := indicator.BBSignals{}
 	upBand, _, lowBand := talib.BBands(cframe.Closes(), N, K, K, 0)
 
-	for day := 1; day < lenCandles; day++ {
+	for day := startDay; day < lenCandles; day++ {
 		if day < N {
 			continue
 		}
@@ -262,7 +262,7 @@ func (cframe *CandleFrame) optimizeMacd(
 	for fast := lowFast; fast <= highFast; fast++ {
 		for slow := lowSlow; slow <= highSlow; slow++ {
 			for signal := lowSignal; signal <= highSignal; signal++ {
-				signals := cframe.backtestMacd(fast, slow, signal)
+				signals := cframe.backtestMacd(1, fast, slow, signal)
 				if signals == nil {
 					continue
 				}
@@ -282,7 +282,7 @@ func (cframe *CandleFrame) optimizeMacd(
 	return bestPerformance, bestFast, bestSlow, bestSignal
 }
 
-func (cframe *CandleFrame) backtestMacd(fast, slow, signal int) *indicator.MacdSignals {
+func (cframe *CandleFrame) backtestMacd(startDay, fast, slow, signal int) *indicator.MacdSignals {
 	candles := cframe.Candles
 	lenCandles := len(candles)
 
@@ -293,7 +293,7 @@ func (cframe *CandleFrame) backtestMacd(fast, slow, signal int) *indicator.MacdS
 	signals := indicator.MacdSignals{}
 	macd, macdSignal, _ := talib.Macd(cframe.Closes(), fast, slow, signal)
 
-	for day := 1; day < lenCandles; day++ {
+	for day := startDay; day < lenCandles; day++ {
 		if macd[day] < 0 && macdSignal[day] < 0 &&
 			macd[day-1] < macdSignal[day-1] &&
 			macd[day] >= macdSignal[day] {
@@ -323,7 +323,7 @@ func (cframe *CandleFrame) optimizeRsi(
 	for peirod := lowPeriod; peirod <= highPeriod; peirod++ {
 		for buyThread := lowBuyThread; buyThread <= highBuyThread; buyThread++ {
 			for sellThread := lowSellThread; sellThread <= highSellThread; sellThread++ {
-				signals := cframe.backtestRsi(peirod, buyThread, sellThread)
+				signals := cframe.backtestRsi(1, peirod, buyThread, sellThread)
 				if signals == nil {
 					continue
 				}
@@ -342,7 +342,7 @@ func (cframe *CandleFrame) optimizeRsi(
 	return bestPerformance, bestPeriod, bestBuyThread, bestSellThread
 }
 
-func (cframe *CandleFrame) backtestRsi(period int, buyThread, sellThread float64) *indicator.RsiSignals {
+func (cframe *CandleFrame) backtestRsi(startDay, period int, buyThread, sellThread float64) *indicator.RsiSignals {
 	candles := cframe.Candles
 	lenCandles := len(candles)
 
@@ -353,7 +353,7 @@ func (cframe *CandleFrame) backtestRsi(period int, buyThread, sellThread float64
 	signals := indicator.RsiSignals{}
 	rsi := talib.Rsi(cframe.Closes(), period)
 
-	for day := 1; day < lenCandles; day++ {
+	for day := startDay; day < lenCandles; day++ {
 		if rsi[day-1] == 0 || rsi[day-1] == 100 {
 			continue
 		}
@@ -383,7 +383,7 @@ func (cframe *CandleFrame) optimizeWillr(
 	for period := lowPeriod; period <= highPeriod; period++ {
 		for buyThread := lowBuyThread; buyThread <= highBuyThread; buyThread++ {
 			for sellThread := lowSellThread; sellThread <= highSellThread; sellThread++ {
-				signals := cframe.backtestWillr(period, buyThread, sellThread)
+				signals := cframe.backtestWillr(1, period, buyThread, sellThread)
 				if signals == nil {
 					continue
 				}
@@ -402,7 +402,7 @@ func (cframe *CandleFrame) optimizeWillr(
 	return bestPerformance, bestPeriod, bestBuyThread, bestSellThread
 }
 
-func (cframe *CandleFrame) backtestWillr(period int, buyThread, sellThread float64) *indicator.WillrSignals {
+func (cframe *CandleFrame) backtestWillr(startDay, period int, buyThread, sellThread float64) *indicator.WillrSignals {
 	candles := cframe.Candles
 	lenCandles := len(candles)
 
@@ -413,7 +413,7 @@ func (cframe *CandleFrame) backtestWillr(period int, buyThread, sellThread float
 	signals := indicator.WillrSignals{}
 	willr := talib.WillR(cframe.Highs(), cframe.Lows(), cframe.Closes(), period)
 
-	for day := 1; day < lenCandles; day++ {
+	for day := startDay; day < lenCandles; day++ {
 		if willr[day-1] == 0 || willr[day-1] == -100 {
 			continue
 		}
