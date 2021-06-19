@@ -14,6 +14,7 @@ type Candles []Candle
 
 // Candle is daily stock candledata, also used as json
 type Candle struct {
+	ID     int     `json:"-"`
 	Time   int64   `json:"time"`
 	Open   float64 `json:"open"`
 	High   float64 `json:"high"`
@@ -45,6 +46,25 @@ func NewCandlesFromQuote(adjStock *quote.Quote, Stock *quote.Quote) *Candles {
 // CreateCandles creates candle data
 func (cs *Candles) CreateCandles() {
 	DB.Create(cs)
+}
+
+
+// LastCandleTime returns a time of last candle
+func LastCandleTime() (int64, error) {
+	var candle Candle
+	if err := DB.Last(&candle).Error; err != nil {
+		return 0, err
+	}
+	return candle.Time, nil
+}
+
+// MatchTime returns ID mathed to Time field
+func MatchTime(time int64) (int, error) {
+	var candle Candle
+	if err := DB.Where("Time = ?", time).First(&candle).Error; err != nil {
+		return 0, err
+	}
+	return candle.ID, nil
 }
 
 // AllDeleteCandles deletes all data of "candles" table
