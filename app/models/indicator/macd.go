@@ -1,15 +1,5 @@
 package indicator
 
-// Macd is macd indicator
-type Macd struct {
-	Fast       int       `json:"fast_period,omitempty"`
-	Slow       int       `json:"slow_period,omitempty"`
-	Signal     int       `json:"signal_period,omitempty"`
-	Macd       []float64 `json:"macd,omitempty"`
-	MacdSignal []float64 `json:"macd_signal,omitempty"`
-	MacdHist   []float64 `json:"macd_hist,omitempty"`
-}
-
 // MacdBacktestParam represents some parameters used for backtest
 type MacdBacktestParam struct {
 	MacdFastLow    int `json:"fast_low"`

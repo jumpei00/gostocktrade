@@ -1,11 +1,5 @@
 package indicator
 
-// Ema is ema indicator
-type Ema struct {
-	Period int       `json:"period,omitempty"`
-	Values []float64 `json:"values,omitempty"`
-}
-
 // EmaBacktestParam represents some parameters used for backtest
 type EmaBacktestParam struct {
 	EmaShortLow  int `json:"short_low"`

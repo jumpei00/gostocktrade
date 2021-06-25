@@ -78,7 +78,7 @@ export function viewChart(symbol, json) {
 // when optimized params exists, it's viewed, when no, it's cleared
 export function viewBacktestResults(results_element, results, onchangeFunc) {
     results_element.innerHTML = "";
-    
+
     // no data
     if (results == undefined) {
         return
@@ -97,7 +97,7 @@ export function viewBacktestResults(results_element, results, onchangeFunc) {
         <input type="checkbox" id="signal" value="rsi">
         [RSI] Performance: ${results.rsi_performance} Period: ${results.rsi_period} Buy: ${results.rsi_buythread} Sell: ${results.rsi_sellthread}
         <input type="checkbox" id="signal" value="willr">
-        [Willr] Performance: ${results.willr_performance} Period: ${results.willr_period} Buy: ${results.willr_buythread} Sell: ${results.willr_sellthread}
+        [WILLr] Performance: ${results.willr_performance} Period: ${results.willr_period} Buy: ${results.willr_buythread} Sell: ${results.willr_sellthread}
     `
 
     // setting eventListener function for a part of signal
@@ -107,6 +107,42 @@ export function viewBacktestResults(results_element, results, onchangeFunc) {
             onchangeFunc(signals[i]);
         })
     }
+}
+
+export function viewTrade(trade_element, results) {
+    trade_element.innerHTML = ""
+
+    // no data
+    if (results == undefined) {
+        return
+    }
+
+    trade_element.innerHTML = `
+        [EMA] <span style=${styleSet(results.last_ema, results.today_ema)}>${results.last_ema}</span>
+        [BB] <span style=${styleSet(results.last_bb, results.today_bb)}>${results.last_bb}</span>
+        [MACD] <span style=${styleSet(results.last_macd, results.today_macd)}>${results.last_macd}</span>
+        [RSI] <span style=${styleSet(results.last_rsi, results.today_rsi)}>${results.last_rsi}</span>
+        [WILLr] <span style=${styleSet(results.last_willr, results.today_willr)}>${results.last_willr}</span>
+    `
+}
+
+function styleSet(signal, today_trade) {
+    let style = ""
+
+    switch (signal) {
+        case "BUY":
+            style = "color:red;"
+            break
+        case "SELL":
+            style = "color:blue;"
+            break
+    }
+
+    if (today_trade) {
+        style += "font-weight:bold;"
+    }
+    
+    return style
 }
 
 // viewSignal views signal(BUY or SELL) for some indicators, when checkbox is checked
@@ -136,7 +172,7 @@ export function viewSignal(symbol, signalName, signals) {
 
 // viewSignal unviews signal(BUY or SELL) for some indicators, when checkbox is unchecked
 export function removeSignal(signalName) {
-    for (let i = 0; i < chart.series.length; i++){
+    for (let i = 0; i < chart.series.length; i++) {
         if (chart.series[i].name == signalName) {
             chart.series[i].remove();
             return

@@ -1,8 +1,16 @@
-import { viewRealTime, viewChart, viewBacktestResults, viewSignal, removeSignal } from "./view.js"
+import { viewRealTime, viewChart, viewBacktestResults, viewTrade, viewSignal, removeSignal } from "./view.js"
 import { candleGetRequest, backtestRequest, signalRequest, mappingParams } from "./request.js"
 
 const candle = document.querySelector("#candle")
 const backtest = document.querySelector("#backtest")
+
+// getButtonAction is executed when GET button is pushed
+function getButtonAction() {
+    const getButton = candle.querySelector("#get");
+    getButton.addEventListener("click", () => {
+        candlesGet();
+    })
+}
 
 // candleGet gets candle data from server, view graph
 function candlesGet() {
@@ -11,17 +19,20 @@ function candlesGet() {
     const query = new URLSearchParams({ symbol: symbol, period: period, get: true });
 
     candleGetRequest("/candles", query).then(function (json) {
-        const result_tag = backtest.querySelector("#results")
+        const result_tag = backtest.querySelector("#results");
+        const trade_tag = backtest.querySelector("#trade");
+
         viewChart(symbol, json["candles"]);
         viewBacktestResults(result_tag, json["optimized_params"], signalButtonAction);
+        viewTrade(trade_tag, json["trade"]);
     })
 }
 
-// getButtonAction is executed when GET button is pushed
-function getButtonAction() {
-    const getButton = candle.querySelector("#get");
-    getButton.addEventListener("click", () => {
-        candlesGet();
+// testButtonAction is executed when TEST button is pushed
+function testButtonAction() {
+    const testButton = backtest.querySelector("#test");
+    testButton.addEventListener("click", () => {
+        executeBacktest();
     })
 }
 
@@ -34,25 +45,11 @@ function executeBacktest() {
     backtest_params.period = +backtest.querySelector("#period").value
 
     backtestRequest("/backtest", backtest_params).then(function (json) {
-        const result_tag = backtest.querySelector("#results")
+        const result_tag = backtest.querySelector("#results");
+        const trade_tag = backtest.querySelector("#trade");
+
         viewBacktestResults(result_tag, json["optimized_params"], signalButtonAction);
-    })
-}
-
-// testButtonAction is executed when TEST button is pushed
-function testButtonAction() {
-    const testButton = backtest.querySelector("#test");
-    testButton.addEventListener("click", () => {
-        executeBacktest();
-    })
-}
-
-// signalGet gets signals(BUY or SELL) for some indicators from server 
-function signalGet(indicator) {
-    const symbol = candle.querySelector("#symbol").value;
-    const query = new URLSearchParams({ symbol: symbol, [indicator]: true })
-    signalRequest("/candles", query).then(function (json) {
-        viewSignal(symbol, indicator, json["signals"]);
+        viewTrade(trade_tag, json["trade"]);
     })
 }
 
@@ -63,6 +60,15 @@ function signalButtonAction(signal) {
     } else {
         removeSignal(signal.value);
     }
+}
+
+// signalGet gets signals(BUY or SELL) for some indicators from server 
+function signalGet(indicator) {
+    const symbol = candle.querySelector("#symbol").value;
+    const query = new URLSearchParams({ symbol: symbol, [indicator]: true })
+    signalRequest("/candles", query).then(function (json) {
+        viewSignal(symbol, indicator, json["signals"]);
+    })
 }
 
 window.addEventListener("load", () => {
