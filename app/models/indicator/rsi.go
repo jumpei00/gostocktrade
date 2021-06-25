@@ -1,11 +1,5 @@
 package indicator
 
-// Rsi is rsi indicator
-type Rsi struct {
-	Period int       `json:"period,omitempty"`
-	Values []float64 `json:"values,omitempty"`
-}
-
 // RsiBacktestParam represents some parameters used for backtest
 type RsiBacktestParam struct {
 	RsiPeriodLow      int     `json:"period_low"`

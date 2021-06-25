@@ -3,13 +3,15 @@ package models
 import (
 	"github.com/jumpei00/gostocktrade/app/models/indicator"
 	"github.com/markcheno/go-talib"
+	"github.com/sirupsen/logrus"
 )
 
 // DataFrame is data frame including candles, optimized parameters, signals
 type DataFrame struct {
 	*CandleFrame
-	*SignalFrame
 	*OptimizedParamFrame
+	*SignalFrame
+	*TradeFrame
 }
 
 // NewDataFrame is constructor of DataFrame
@@ -30,6 +32,26 @@ func (dframe *DataFrame) AddSignalFrame(symbol string, ema, bb, macd, rsi, willr
 // AddOptimizedParamFrame adds OptimizedParamFrame in DataFrame
 func (dframe *DataFrame) AddOptimizedParamFrame(symbol string) {
 	dframe.OptimizedParamFrame = GetOptimizedParamFrame(symbol)
+}
+
+// AddTradeFrame adds TradeFrame in DataFrame
+func (dframe *DataFrame) AddTradeFrame(symbol string) {
+	dframe.TradeFrame = GetTradeState(symbol)
+}
+
+// SignalFrame is dataframe of SignalEvents
+type SignalFrame struct {
+	Signals *SignalEvents `json:"signals,omitempty"`
+}
+
+// OptimizedParamFrame is optimized params data frame
+type OptimizedParamFrame struct {
+	Param *OptimizedParam `json:"optimized_params,omitempty"`
+}
+
+// TradeFrame is Trade frame
+type TradeFrame struct {
+	Trade *Trade `json:"trade,omitempty"`
 }
 
 // CandleFrame is candle data frame
@@ -83,120 +105,295 @@ func (cframe *CandleFrame) Volumes() []float64 {
 	return volume
 }
 
-// SignalFrame is dataframe of SignalEvents
-type SignalFrame struct {
-	Signals *SignalEvents `json:"signals,omitempty"`
+// following, using for backtest
+func (cframe *CandleFrame) optimizeEma(
+	lowShort, highShort, lowLong, highLong int) (bestPerformance float64, bestShort, bestLong int) {
+	logrus.Infof("Ema backtest start: paramas -> %v, %v, %v %v", lowShort, highShort, lowLong, highLong)
+
+	profit := 0.0
+	bestShort = 7
+	bestLong = 14
+
+	for short := lowShort; short <= highShort; short++ {
+		for long := lowLong; long <= highLong; long++ {
+			signals := cframe.backtestEma(1, short, long)
+			if signals == nil {
+				continue
+			}
+
+			profit = signals.Profit()
+			if bestPerformance < profit {
+				bestPerformance = profit
+				bestShort = short
+				bestLong = long
+			}
+		}
+	}
+
+	logrus.Infof("Ema backtest end: results -> %v, %v, %v", bestPerformance, bestShort, bestLong)
+	return bestPerformance, bestShort, bestLong
 }
 
-// OptimizedParamFrame is optimized params data frame
-type OptimizedParamFrame struct {
-	Param *OptimizedParam `json:"optimized_params,omitempty"`
+func (cframe *CandleFrame) backtestEma(startDay, short int, long int) *indicator.EmaSignals {
+	candles := cframe.Candles
+	lenCandles := len(candles)
+
+	if short >= lenCandles || long >= lenCandles {
+		return nil
+	}
+
+	signals := indicator.EmaSignals{}
+	shortEma := talib.Ema(cframe.Closes(), short)
+	longEma := talib.Ema(cframe.Closes(), long)
+
+	for day := startDay; day < lenCandles; day++ {
+		if day < short || day < long {
+			continue
+		}
+
+		if shortEma[day-1] < longEma[day-1] && shortEma[day] >= longEma[day] {
+			signals.Buy(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+
+		if shortEma[day-1] > longEma[day-1] && shortEma[day] <= longEma[day] {
+			signals.Sell(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+	}
+
+	return &signals
 }
 
-// IndicatorFrame is json frame of indicator data
-// After calculate data, those are stored in this struct
-type IndicatorFrame struct {
-	*CandleFrame
-	Smas   []indicator.Sma   `json:"smas,omitempty"`
-	Emas   []indicator.Ema   `json:"emas,omitempty"`
-	BBands *indicator.BBands `json:"bbands,omitempty"`
-	Macd   *indicator.Macd   `json:"macd,omitempty"`
-	Rsi    *indicator.Rsi    `json:"rsi,omitempty"`
-	WillR  *indicator.Willr  `json:"willr,omitempty"`
+func (cframe *CandleFrame) optimizeBB(
+	lowN, highN int, lowK, highK float64) (bestPerformance float64, bestN int, bestK float64) {
+	logrus.Infof("BB backtest start: paramas -> %v, %v, %v %v", lowN, highN, lowK, highK)
+
+	profit := 0.0
+	bestN = 20
+	bestK = 2.0
+
+	for n := lowN; n <= highN; n++ {
+		for k := lowK; k <= highK; k += 0.1 {
+			signals := cframe.backtestBB(1, n, k)
+			if signals == nil {
+				continue
+			}
+			profit = signals.Profit()
+			if bestPerformance < profit {
+				bestPerformance = profit
+				bestN = n
+				bestK = k
+			}
+		}
+	}
+
+	logrus.Infof("BB backtest end: results -> %v, %v, %v", bestPerformance, bestN, bestK)
+	return bestPerformance, bestN, bestK
 }
 
-// NewIndicator is constractor of IndicatorFrame,
-// and embeded CandleFrame, but not json
-func NewIndicator(symbol string, limit int) *IndicatorFrame {
-	iframe := IndicatorFrame{
-		CandleFrame: GetCandleFrame(symbol, limit),
+func (cframe *CandleFrame) backtestBB(startDay, N int, K float64) *indicator.BBSignals {
+	candles := cframe.Candles
+	lenCandles := len(candles)
+
+	if N >= lenCandles {
+		return nil
 	}
-	return &iframe
+
+	signals := indicator.BBSignals{}
+	upBand, _, lowBand := talib.BBands(cframe.Closes(), N, K, K, 0)
+
+	for day := startDay; day < lenCandles; day++ {
+		if day < N {
+			continue
+		}
+
+		if candles[day-1].Close < lowBand[day-1] && candles[day].Close >= lowBand[day] {
+			signals.Buy(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+
+		if candles[day-1].Close > upBand[day-1] && candles[day].Close <= upBand[day] {
+			signals.Sell(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+	}
+
+	return &signals
 }
 
-// AddSma adds Sma data in IndicatorFrame.Smas
-func (iframe *IndicatorFrame) AddSma(period int) bool {
-	if period > len(iframe.Candles) {
-		return false
+func (cframe *CandleFrame) optimizeMacd(
+	lowFast, highFast, lowSlow, highSlow, lowSignal, highSignal int) (bestPerformance float64, bestFast, bestSlow, bestSignal int) {
+	logrus.Infof("Macd backtest start: paramas -> %v, %v, %v %v, %v, %v", lowFast, highFast, lowSlow, highSlow, lowSignal, highSignal)
+
+	profit := 0.0
+	bestFast = 12
+	bestSlow = 26
+	bestSignal = 9
+
+	for fast := lowFast; fast <= highFast; fast++ {
+		for slow := lowSlow; slow <= highSlow; slow++ {
+			for signal := lowSignal; signal <= highSignal; signal++ {
+				signals := cframe.backtestMacd(1, fast, slow, signal)
+				if signals == nil {
+					continue
+				}
+				profit = signals.Profit()
+				if bestPerformance < profit {
+					bestPerformance = profit
+					bestFast = fast
+					bestSlow = slow
+					bestSignal = signal
+				}
+
+			}
+		}
 	}
 
-	iframe.Smas = append(iframe.Smas, indicator.Sma{
-		Period: period,
-		Values: talib.Sma(iframe.Closes(), period),
-	})
-	return true
+	logrus.Infof("Macd backtest end: results -> %v, %v, %v %v", bestPerformance, bestFast, bestSlow, bestSignal)
+	return bestPerformance, bestFast, bestSlow, bestSignal
 }
 
-// AddEma adds Emas data in IndicatorFrame.Emas
-func (iframe *IndicatorFrame) AddEma(period int) bool {
-	if period > len(iframe.Candles) {
-		return false
+func (cframe *CandleFrame) backtestMacd(startDay, fast, slow, signal int) *indicator.MacdSignals {
+	candles := cframe.Candles
+	lenCandles := len(candles)
+
+	if fast >= lenCandles || slow >= lenCandles || signal >= lenCandles {
+		return nil
 	}
 
-	iframe.Emas = append(iframe.Emas, indicator.Ema{
-		Period: period,
-		Values: talib.Ema(iframe.Closes(), period),
-	})
-	return true
+	signals := indicator.MacdSignals{}
+	macd, macdSignal, _ := talib.Macd(cframe.Closes(), fast, slow, signal)
+
+	for day := startDay; day < lenCandles; day++ {
+		if macd[day] < 0 && macdSignal[day] < 0 &&
+			macd[day-1] < macdSignal[day-1] &&
+			macd[day] >= macdSignal[day] {
+			signals.Buy(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+
+		if macd[day] > 0 && macdSignal[day] > 0 &&
+			macd[day-1] > macdSignal[day-1] &&
+			macd[day] <= macdSignal[day] {
+			signals.Sell(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+	}
+
+	return &signals
 }
 
-// AddBBands adds Boringer Bands data in IndicatorFrame.BBands
-func (iframe *IndicatorFrame) AddBBands(N int, K float64) bool {
-	if N > len(iframe.Candles) {
-		return false
+func (cframe *CandleFrame) optimizeRsi(
+	lowPeriod, highPeriod int,
+	lowBuyThread, highBuyThread, lowSellThread, highSellThread float64) (bestPerformance float64, bestPeriod int, bestBuyThread, bestSellThread float64) {
+	logrus.Infof("Rsi backtest start: paramas -> %v, %v, %v %v, %v, %v", lowPeriod, highPeriod, lowBuyThread, highBuyThread, lowSellThread, highSellThread)
+
+	profit := 0.0
+	bestPeriod = 14
+	bestBuyThread = 30.0
+	bestSellThread = 70.0
+
+	for peirod := lowPeriod; peirod <= highPeriod; peirod++ {
+		for buyThread := lowBuyThread; buyThread <= highBuyThread; buyThread++ {
+			for sellThread := lowSellThread; sellThread <= highSellThread; sellThread++ {
+				signals := cframe.backtestRsi(1, peirod, buyThread, sellThread)
+				if signals == nil {
+					continue
+				}
+				profit = signals.Profit()
+				if bestPerformance < profit {
+					bestPerformance = profit
+					bestPeriod = peirod
+					bestBuyThread = buyThread
+					bestSellThread = sellThread
+				}
+			}
+		}
 	}
 
-	up, mid, low := talib.BBands(iframe.Closes(), N, K, K, 0)
-	iframe.BBands = &indicator.BBands{
-		N:   N,
-		K:   K,
-		Up:  up,
-		Mid: mid,
-		Low: low,
-	}
-	return true
+	logrus.Infof("Rsi backtest end: results -> %v, %v, %v %v", bestPerformance, bestPeriod, bestBuyThread, bestSellThread)
+	return bestPerformance, bestPeriod, bestBuyThread, bestSellThread
 }
 
-// AddMacd adds Macd data in IndicatorFrame.Macd
-func (iframe *IndicatorFrame) AddMacd(fast, slow, signal int) bool {
-	if len(iframe.Candles) < 1 {
-		return false
+func (cframe *CandleFrame) backtestRsi(startDay, period int, buyThread, sellThread float64) *indicator.RsiSignals {
+	candles := cframe.Candles
+	lenCandles := len(candles)
+
+	if period >= lenCandles {
+		return nil
 	}
 
-	macd, macdSignal, macdHist := talib.Macd(iframe.Closes(), fast, slow, signal)
-	iframe.Macd = &indicator.Macd{
-		Fast:       fast,
-		Slow:       slow,
-		Signal:     signal,
-		Macd:       macd,
-		MacdSignal: macdSignal,
-		MacdHist:   macdHist,
+	signals := indicator.RsiSignals{}
+	rsi := talib.Rsi(cframe.Closes(), period)
+
+	for day := startDay; day < lenCandles; day++ {
+		if rsi[day-1] == 0 || rsi[day-1] == 100 {
+			continue
+		}
+
+		if rsi[day-1] < buyThread && rsi[day] >= buyThread {
+			signals.Buy(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+
+		if rsi[day-1] > sellThread && rsi[day] <= sellThread {
+			signals.Sell(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
 	}
-	return true
+
+	return &signals
 }
 
-// AddRsi adds Rsi data in IndicatorFrame.Rsi
-func (iframe *IndicatorFrame) AddRsi(period int) bool {
-	if period > len(iframe.Candles) {
-		return false
+func (cframe *CandleFrame) optimizeWillr(
+	lowPeriod, highPeriod int,
+	lowBuyThread, highBuyThread, lowSellThread, highSellThread float64) (bestPerformance float64, bestPeriod int, bestBuyThread, bestSellThread float64) {
+	logrus.Infof("Willr backtest start: paramas -> %v, %v, %v %v, %v, %v", lowPeriod, highPeriod, lowBuyThread, highBuyThread, lowSellThread, highSellThread)
+
+	profit := 0.0
+	bestPeriod = 10
+	bestBuyThread = -20.0
+	bestSellThread = -80.0
+
+	for period := lowPeriod; period <= highPeriod; period++ {
+		for buyThread := lowBuyThread; buyThread <= highBuyThread; buyThread++ {
+			for sellThread := lowSellThread; sellThread <= highSellThread; sellThread++ {
+				signals := cframe.backtestWillr(1, period, buyThread, sellThread)
+				if signals == nil {
+					continue
+				}
+				profit = signals.Profit()
+				if bestPerformance < profit {
+					bestPerformance = profit
+					bestPeriod = period
+					bestBuyThread = buyThread
+					bestSellThread = sellThread
+				}
+			}
+		}
 	}
 
-	iframe.Rsi = &indicator.Rsi{
-		Period: period,
-		Values: talib.Rsi(iframe.Closes(), period),
-	}
-	return true
+	logrus.Infof("Willr backtest end: results -> %v, %v, %v %v", bestPerformance, bestPeriod, bestBuyThread, bestSellThread)
+	return bestPerformance, bestPeriod, bestBuyThread, bestSellThread
 }
 
-// AddWillr adds WilliamR data in IndicatorFrame.WillR
-func (iframe *IndicatorFrame) AddWillr(period int) bool {
-	if period > len(iframe.Candles) {
-		return false
+func (cframe *CandleFrame) backtestWillr(startDay, period int, buyThread, sellThread float64) *indicator.WillrSignals {
+	candles := cframe.Candles
+	lenCandles := len(candles)
+
+	if period >= lenCandles {
+		return nil
 	}
 
-	iframe.WillR = &indicator.Willr{
-		Period: period,
-		Values: talib.WillR(iframe.Highs(), iframe.Lows(), iframe.Closes(), period),
+	signals := indicator.WillrSignals{}
+	willr := talib.WillR(cframe.Highs(), cframe.Lows(), cframe.Closes(), period)
+
+	for day := startDay; day < lenCandles; day++ {
+		if willr[day-1] == 0 || willr[day-1] == -100 {
+			continue
+		}
+
+		if willr[day-1] < buyThread && willr[day] >= buyThread {
+			signals.Buy(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
+
+		if willr[day-1] > sellThread && willr[day] <= sellThread {
+			signals.Sell(cframe.Symbol, candles[day].Time, candles[day].Close)
+		}
 	}
-	return true
+
+	return &signals
 }

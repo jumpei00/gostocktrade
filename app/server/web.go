@@ -31,6 +31,7 @@ func errorAPI(w http.ResponseWriter, message string, code int) {
 	w.Write(jsonMessage)
 }
 
+// when path is "/"
 func indexAPIHandler(w http.ResponseWriter, req *http.Request) {
 	temp.ExecuteTemplate(w, "index.html", nil)
 }
@@ -68,6 +69,9 @@ func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 		models.NewCandlesFromQuote(adjStock, Stock).CreateCandles()
 		dframe.AddCandleFrame(symbol, period)
 		dframe.AddOptimizedParamFrame(symbol)
+		if models.SignalTest(symbol, period) {
+			dframe.AddTradeFrame(symbol)
+		}
 	}
 
 	ema, _ := strconv.ParseBool(req.URL.Query().Get("ema"))
@@ -108,32 +112,13 @@ func backtestAPIHandler(w http.ResponseWriter, req *http.Request) {
 
 	dframe := models.NewDataFrame()
 	dframe.AddOptimizedParamFrame(bt.Symbol)
+	dframe.AddTradeFrame(bt.Symbol)
 
 	js, err := json.Marshal(dframe)
 	if err != nil {
 		logrus.Warnf("optimized params json error: %v", err)
 		errorAPI(w, "optimized params json error", http.StatusInternalServerError)
 		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
-}
-
-// This api does not use??(indicator can calcurate on frontend)
-func indicatorAPIHandler(w http.ResponseWriter, req *http.Request) {
-	symbol := req.URL.Query().Get("symbol")
-	if symbol == "" {
-		errorAPI(w, "bad parameter(symbol, period)", http.StatusBadRequest)
-		return
-	}
-
-	iframe := models.NewIndicator(symbol, 365)
-	iframe.AddEma(8)
-
-	js, err := json.Marshal(iframe)
-	if err != nil {
-		logrus.Warnf("indicator json error: %v", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -148,6 +133,5 @@ func Run() {
 	http.HandleFunc("/", indexAPIHandler)
 	http.HandleFunc("/candles", candleGetAPIHandler)
 	http.HandleFunc("/backtest", backtestAPIHandler)
-	http.HandleFunc("/indicator", indicatorAPIHandler)
 	logrus.Fatalln(http.ListenAndServe(fmt.Sprintf(":%d", config.Config.Port), nil))
 }

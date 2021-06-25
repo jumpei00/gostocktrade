@@ -10,49 +10,70 @@ import (
 
 // Trade represents whether today is "buy" or "sell" or "no trade"
 type Trade struct {
-	EmaTrade   string `json:"ema_trade"`
-	BBTrade    string `json:"bb_trade"`
-	MacdTrade  string `json:"macd_trade"`
-	RsiTrade   string `json:"rsi_trade"`
-	WillrTrade string `json:"willr_trade"`
+	LastEmaTrade   string `json:"last_ema"`
+	IsEmaToday     bool   `json:"today_ema"`
+	LastBBTrade    string `json:"last_bb"`
+	IsBBToday      bool   `json:"today_bb"`
+	LastMacdTrade  string `json:"last_macd"`
+	IsMacdToday    bool   `json:"today_macd"`
+	LastRsiTrade   string `json:"last_rsi"`
+	IsRsiToday     bool   `json:"today_rsi"`
+	LastWillrTrade string `json:"last_willr"`
+	IsWillrToday   bool   `json:"today_willr"`
 }
 
-// TodayTradeState returns Trade, after examining today trading
-func TodayTradeState(symbol string) *Trade {
+// GetTradeState returns Trade, after examining today trading
+func GetTradeState(symbol string) *TradeFrame {
 	signalEvents := GetSignalFrame(symbol, true, true, true, true, true).Signals
 	lastCandleTime, err := LastCandleTime()
 	if err != nil {
 		logrus.Warnf("last candle get error: %v", err)
-		return nil
+		return &TradeFrame{Trade: nil}
 	}
 
 	trade := Trade{
-		EmaTrade:   indicator.NOTRADE,
-		BBTrade:    indicator.NOTRADE,
-		MacdTrade:  indicator.NOTRADE,
-		RsiTrade:   indicator.NOTRADE,
-		WillrTrade: indicator.NOTRADE,
+		LastEmaTrade:   indicator.NOTRADE,
+		IsEmaToday:     false,
+		LastBBTrade:    indicator.NOTRADE,
+		IsBBToday:      false,
+		LastMacdTrade:  indicator.NOTRADE,
+		IsMacdToday:    false,
+		LastRsiTrade:   indicator.NOTRADE,
+		IsRsiToday:     false,
+		LastWillrTrade: indicator.NOTRADE,
+		IsWillrToday:   false,
 	}
 
-	for k, v := range signalEvents.LastSignalTimes() {
-		if lastCandleTime != v {
+	for signal, time := range signalEvents.LastSignalTimes() {
+		// no signal
+		if time == 0 {
 			continue
 		}
-		switch k {
+		switch signal {
 		case "emaTime":
-			trade.EmaTrade = signalEvents.EmaSignals[len(signalEvents.EmaSignals)-1].Action
+			lastEma := signalEvents.EmaSignals[len(signalEvents.EmaSignals)-1]
+			trade.LastEmaTrade = lastEma.Action
+			trade.IsEmaToday = (lastEma.Time == lastCandleTime)
 		case "bbTime":
-			trade.BBTrade = signalEvents.BBSignals[len(signalEvents.BBSignals)-1].Action
+			lastBB := signalEvents.BBSignals[len(signalEvents.BBSignals)-1]
+			trade.LastBBTrade = lastBB.Action
+			trade.IsBBToday = (lastBB.Time == lastCandleTime)
 		case "macdTime":
-			trade.MacdTrade = signalEvents.MacdSignals[len(signalEvents.MacdSignals)-1].Action
+			lastMacd := signalEvents.MacdSignals[len(signalEvents.MacdSignals)-1]
+			trade.LastMacdTrade = lastMacd.Action
+			trade.IsMacdToday = (lastMacd.Time == lastCandleTime)
 		case "rsiTime":
-			trade.RsiTrade = signalEvents.RsiSignals[len(signalEvents.RsiSignals)-1].Action
+			lastRsi := signalEvents.RsiSignals[len(signalEvents.RsiSignals)-1]
+			trade.LastRsiTrade = lastRsi.Action
+			trade.IsRsiToday = (lastRsi.Time == lastCandleTime)
 		case "willrTime":
-			trade.WillrTrade = signalEvents.WillrSignals[len(signalEvents.WillrSignals)-1].Action
+			lastWillr := signalEvents.WillrSignals[len(signalEvents.WillrSignals)-1]
+			trade.LastWillrTrade = lastWillr.Action
+			trade.IsWillrToday = (lastWillr.Time == lastCandleTime)
 		}
 	}
 
-	return &trade
+	return &TradeFrame{Trade: &trade}
 }
 
 // SignalEvents stores a part of signal
@@ -105,39 +126,15 @@ func GetSignalFrame(symbol string, ema, bb, macd, rsi, willr bool) *SignalFrame 
 	return &SignalFrame{Signals: signalEvents}
 }
 
-// LastSignalTimes returns a slice including Time for a last element of Signals
-func (sg *SignalEvents) LastSignalTimes() map[string]int64 {
-	lastTimes := []int64{}
-
-	rv := reflect.ValueOf(*sg)
-	for i := 0; i < rv.NumField(); i++ {
-		signals := rv.Field(i)
-		if signals.Len() != 0 {
-			lastTimes = append(lastTimes, signals.Index(signals.Len()-1).FieldByName("Time").Int())
-		} else {
-			lastTimes = append(lastTimes, 0)
-		}
-	}
-
-	return map[string]int64{
-		"emaTime":   lastTimes[0],
-		"bbTime":    lastTimes[1],
-		"macdTime":  lastTimes[2],
-		"rsiTime":   lastTimes[3],
-		"willrTime": lastTimes[4],
-	}
-
-}
-
-// SignalTest execute backtest from last signal day
-func SignalTest(symbol string, period int) {
-	cframe := GetCandleFrame(symbol, period)
+// SignalTest execute backtest from last signal day, in other words, update each signal event
+func SignalTest(symbol string, period int) bool {
 	opParam := GetOptimizedParamFrame(symbol).Param
-	signalEvents := GetSignalFrame(symbol, true, true, true, true, true).Signals
-
-	if opParam == nil || signalEvents == nil {
-		return
+	if opParam == nil {
+		return false
 	}
+
+	cframe := GetCandleFrame(symbol, period)
+	signalEvents := GetSignalFrame(symbol, true, true, true, true, true).Signals
 
 	firstTime := cframe.Candles[0].ID
 	for k, v := range signalEvents.LastSignalTimes() {
@@ -166,4 +163,30 @@ func SignalTest(symbol string, period int) {
 
 		}
 	}
+
+	return true
+}
+
+// LastSignalTimes returns a slice including Time for a last element of Signals
+func (sg *SignalEvents) LastSignalTimes() map[string]int64 {
+	lastTimes := []int64{}
+
+	rv := reflect.ValueOf(*sg)
+	for i := 0; i < rv.NumField(); i++ {
+		signals := rv.Field(i)
+		if signals.Len() != 0 {
+			lastTimes = append(lastTimes, signals.Index(signals.Len()-1).FieldByName("Time").Int())
+		} else {
+			lastTimes = append(lastTimes, 0)
+		}
+	}
+
+	return map[string]int64{
+		"emaTime":   lastTimes[0],
+		"bbTime":    lastTimes[1],
+		"macdTime":  lastTimes[2],
+		"rsiTime":   lastTimes[3],
+		"willrTime": lastTimes[4],
+	}
+
 }

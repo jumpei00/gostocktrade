@@ -16,7 +16,7 @@ func GetStockData(symbol string, dayPeriod int, adj bool) (*quote.Quote, error) 
 	endDay := time.Now()
 	startDay := endDay.AddDate(0, 0, -dayPeriod)
 
-	logrus.Info("get stock data from yahoo")
+	logrus.Infof("get %s stock data from yahoo", symbol)
 	stock, err := quote.NewQuoteFromYahoo(
 		symbol, startDay.Format(timeFormat), endDay.Format(timeFormat), quote.Daily, adj)
 

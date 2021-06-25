@@ -1,11 +1,5 @@
 package indicator
 
-// Willr is williamR indicator
-type Willr struct {
-	Period int       `json:"period,omitempty"`
-	Values []float64 `json:"values,omitempty"`
-}
-
 // WillrBacktestParam represents some parameters used for backtest
 type WillrBacktestParam struct {
 	WillrPeriodLow      int     `json:"period_low"`
