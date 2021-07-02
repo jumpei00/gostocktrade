@@ -13,7 +13,7 @@ const chart = Highcharts.stockChart("container", {
     ],
 
     series: []
-})
+});
 
 // viewRealTime views current datetime on a window
 export function viewRealTime() {
