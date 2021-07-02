@@ -13,7 +13,7 @@ What this application implements is as follows.
 ## generate
 ```
 $ go mod tidy
-$ go run main
+$ go run main.go
 ```
 or
 ```
