@@ -16,7 +16,8 @@ type ConfList struct {
 	IP       string
 }
 
-func init() {
+// InitConfig initializes config settings
+func InitConfig() {
 	conf, err := ini.Load("config.ini")
 	if err != nil {
 		logrus.Warnf("init file open error: %v", err)

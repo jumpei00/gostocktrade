@@ -22,7 +22,8 @@ type Trade struct {
 	IsWillrToday   bool   `json:"today_willr"`
 }
 
-// GetTradeState returns Trade, after examining today trading
+// GetTradeState returns Trade, after examining today trading,
+// the symbol argument is certainly the same to the candle symbol
 func GetTradeState(symbol string) *TradeFrame {
 	signalEvents := GetSignalFrame(symbol, true, true, true, true, true).Signals
 	lastCandleTime, err := LastCandleTime()
