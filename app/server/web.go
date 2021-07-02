@@ -13,8 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var temp = template.Must(template.ParseFiles("templates/index.html"))
-
 // JSONError is json error massage
 type JSONError struct {
 	Error string `json:"error"`
@@ -31,12 +29,16 @@ func errorAPI(w http.ResponseWriter, message string, code int) {
 	w.Write(jsonMessage)
 }
 
+// IndexAPIHandler returns index.html contents,
 // when path is "/"
-func indexAPIHandler(w http.ResponseWriter, req *http.Request) {
+func IndexAPIHandler(w http.ResponseWriter, req *http.Request) {
+	temp := template.Must(template.ParseFiles("templates/index.html"))
 	temp.ExecuteTemplate(w, "index.html", nil)
 }
 
-func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
+// CandleGetAPIHandler gets stock data, optimized paramerters, signal data, and trade data,
+// when path is "/candles"
+func CandleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 	logrus.Infof("candle get request: url -> %s", req.URL)
 
 	get, _ := strconv.ParseBool(req.URL.Query().Get("get"))
@@ -57,11 +59,11 @@ func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 
 	// Downloads stock data
 	if get {
-		adjStock, err1 := stock.GetStockData(symbol, period, true)
-		Stock, err2 := stock.GetStockData(symbol, period, false)
-		if err1 != nil || err2 != nil {
-			logrus.Warnf("stock get error: %v, %v", err1, err2)
-			errorAPI(w, fmt.Sprintf("stock get error: %v, %v", err1, err2), http.StatusInternalServerError)
+		adjStock, _ := stock.GetStockData(symbol, period, true)
+		Stock, _ := stock.GetStockData(symbol, period, false)
+		if len(adjStock.Date) == 0 || len(Stock.Date) == 0 {
+			logrus.Warnf("stock get error, symbol: %v", symbol)
+			errorAPI(w, fmt.Sprintf("stock get error, symbol: %v", symbol), http.StatusBadRequest)
 			return
 		}
 		// After delete existing data, store stock data in DB
@@ -93,7 +95,9 @@ func candleGetAPIHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(js)
 }
 
-func backtestAPIHandler(w http.ResponseWriter, req *http.Request) {
+// BacktestAPIHandler executes backtest, returns optimized parameters, trade data,
+// when path is "/backtest"
+func BacktestAPIHandler(w http.ResponseWriter, req *http.Request) {
 	logrus.Info("backtest request")
 	dec := json.NewDecoder(req.Body)
 
@@ -130,8 +134,8 @@ func Run() {
 	logrus.Info("server start")
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
-	http.HandleFunc("/", indexAPIHandler)
-	http.HandleFunc("/candles", candleGetAPIHandler)
-	http.HandleFunc("/backtest", backtestAPIHandler)
+	http.HandleFunc("/", IndexAPIHandler)
+	http.HandleFunc("/candles", CandleGetAPIHandler)
+	http.HandleFunc("/backtest", BacktestAPIHandler)
 	logrus.Fatalln(http.ListenAndServe(fmt.Sprintf(":%d", config.Config.Port), nil))
 }

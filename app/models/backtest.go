@@ -21,6 +21,8 @@ type BackTestParam struct {
 }
 
 // BackTest excecutes backtest
+// Caution, the Symbol in BackTestParam is the same to ticker symbol of the candle data,
+// if those are different, deal with frontend process
 func (bt *BackTestParam) BackTest() *OptimizedParam {
 	DeleteBacktestResult(bt.Symbol)
 

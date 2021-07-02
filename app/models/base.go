@@ -12,7 +12,8 @@ import (
 // DB is DBconnection
 var DB *gorm.DB
 
-func init() {
+// InitDB initializes DB
+func InitDB() {
 	var err error
 
 	DB, err = gorm.Open(sqlite.Open(config.Config.DBname), &gorm.Config{
