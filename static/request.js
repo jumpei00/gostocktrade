@@ -37,7 +37,7 @@ export function mappingParams(params) {
     if (backtest_params.ema.short_low > backtest_params.ema.short_high ||
         backtest_params.ema.long_low > backtest_params.ema.long_high) {
         message = "wrong ema parameters, please check magnitude relation(low >= high?)";
-        return backtest_params, false, message
+        return [backtest_params, false, message]
     }
 
     backtest_params.bb.n_low = +params.querySelector("#bb_n_low").value;
@@ -47,7 +47,7 @@ export function mappingParams(params) {
     if (backtest_params.bb.n_low > backtest_params.bb.n_high ||
         backtest_params.bb.k_low > backtest_params.bb.k_high) {
         message = "wrong bb parameters, please check magnitude relation(low >= high?)";
-        return backtest_params, false, message
+        return [backtest_params, false, message]
     }
 
     backtest_params.macd.fast_low = +params.querySelector("#macd_fast_low").value;
@@ -60,7 +60,7 @@ export function mappingParams(params) {
         backtest_params.macd.slow_low > backtest_params.macd.slow_high ||
         backtest_params.macd.signal_low > backtest_params.macd.signal_high){
         message = "wrong macd parameters, please check magnitude relation(low >= high?)";
-        return backtest_params, false, message
+        return [backtest_params, false, message]
     }
 
     backtest_params.rsi.period_low = +params.querySelector("#rsi_period_low").value;
@@ -73,7 +73,7 @@ export function mappingParams(params) {
         backtest_params.rsi.buy_low > backtest_params.rsi.buy_high ||
         backtest_params.rsi.sell_low > backtest_params.rsi.sell_high) {
         message = "wrong rsi parameters, please check magnitude relation(low >= high?)";
-        return backtest_params, false, message
+        return [backtest_params, false, message]
     }
 
     backtest_params.willr.period_low = +params.querySelector("#willr_period_low").value;
@@ -86,10 +86,10 @@ export function mappingParams(params) {
         backtest_params.willr.buy_low > backtest_params.willr.buy_high ||
         backtest_params.willr.sell_low > backtest_params.willr.sell_high) {
         message = "wrong willr parameters, please check magnitude relation(low >= high?)";
-        return backtest_params, false, message
+        return [backtest_params, false, message]
     }
 
-    return backtest_params, true, message
+    return [backtest_params, true, message]
 }
 
 // candleGetRequest fetches any data from server, return json
