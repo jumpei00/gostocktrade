@@ -53,7 +53,7 @@ function executeBacktest() {
     }
 
     const params = backtest.querySelector("#params")
-    let backtest_params, err, message = mappingParams(params);
+    let [backtest_params, err, message] = mappingParams(params);
     if (!err) {
         alert(message);
         return
