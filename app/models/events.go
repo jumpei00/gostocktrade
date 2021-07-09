@@ -147,19 +147,24 @@ func SignalTest(symbol string, period int) bool {
 		startDay := machID - firstTime + 1
 		switch k {
 		case "emaTime":
-			emaSignals := cframe.backtestEma(startDay, opParam.EmaShort, opParam.EmaLong).EmaSignals
+			emaSignals := cframe.backtestEma(
+				startDay, opParam.EmaShort, opParam.EmaLong, &signalEvents.EmaSignals[len(signalEvents.EmaSignals)-1]).EmaSignals
 			DB.Model(opParam).Association("EmaSignals").Append(emaSignals)
 		case "bbTime":
-			bbSignals := cframe.backtestBB(startDay, opParam.BBn, opParam.BBk).BBSignals
+			bbSignals := cframe.backtestBB(
+				startDay, opParam.BBn, opParam.BBk, &signalEvents.BBSignals[len(signalEvents.BBSignals)-1]).BBSignals
 			DB.Model(opParam).Association("BBSignals").Append(bbSignals)
 		case "macdTime":
-			macdSignals := cframe.backtestMacd(startDay, opParam.MacdFast, opParam.MacdSlow, opParam.MacdSignal).MacdSignals
+			macdSignals := cframe.backtestMacd(
+				startDay, opParam.MacdFast, opParam.MacdSlow, opParam.MacdSignal, &signalEvents.MacdSignals[len(signalEvents.MacdSignals)-1]).MacdSignals
 			DB.Model(opParam).Association("MacdSignals").Append(macdSignals)
 		case "rsiTime":
-			rsiSignals := cframe.backtestRsi(startDay, opParam.RsiPeriod, opParam.RsiBuyThread, opParam.RsiSellThread).RsiSignals
+			rsiSignals := cframe.backtestRsi(
+				startDay, opParam.RsiPeriod, opParam.RsiBuyThread, opParam.RsiSellThread, &signalEvents.RsiSignals[len(signalEvents.RsiSignals)-1]).RsiSignals
 			DB.Model(opParam).Association("RsiSignals").Append(rsiSignals)
 		case "willrTime":
-			willrSignals := cframe.backtestWillr(startDay, opParam.WillrPeriod, opParam.WillrBuyThread, opParam.WillrSellThread).WillrSignals
+			willrSignals := cframe.backtestWillr(
+				startDay, opParam.WillrPeriod, opParam.WillrBuyThread, opParam.WillrSellThread, &signalEvents.WillrSignals[len(signalEvents.WillrSignals)-1]).WillrSignals
 			DB.Model(opParam).Association("WillrSignals").Append(willrSignals)
 
 		}
