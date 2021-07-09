@@ -64,11 +64,11 @@ func (bt *BackTestParam) BackTest() *OptimizedParam {
 		WillrPeriod:      bpWillrPeriod,
 		WillrBuyThread:   bpWillrBuy,
 		WillrSellThread:  bpWillrSell,
-		EmaSignals:       cframe.backtestEma(1, bpEmaShort, bpEmaLong).EmaSignals,
-		BBSignals:        cframe.backtestBB(1, bpBBn, bpBBk).BBSignals,
-		MacdSignals:      cframe.backtestMacd(1, bpMacdFast, bpMacdSlow, bpMacdSignal).MacdSignals,
-		RsiSignals:       cframe.backtestRsi(1, bpRsiPeriod, bpRsiBuy, bpRsiSell).RsiSignals,
-		WillrSignals:     cframe.backtestWillr(1, bpWillrPeriod, bpWillrBuy, bpWillrSell).WillrSignals,
+		EmaSignals:       cframe.backtestEma(1, bpEmaShort, bpEmaLong, nil).EmaSignals,
+		BBSignals:        cframe.backtestBB(1, bpBBn, bpBBk, nil).BBSignals,
+		MacdSignals:      cframe.backtestMacd(1, bpMacdFast, bpMacdSlow, bpMacdSignal, nil).MacdSignals,
+		RsiSignals:       cframe.backtestRsi(1, bpRsiPeriod, bpRsiBuy, bpRsiSell, nil).RsiSignals,
+		WillrSignals:     cframe.backtestWillr(1, bpWillrPeriod, bpWillrBuy, bpWillrSell, nil).WillrSignals,
 	}
 
 	return &op
