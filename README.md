@@ -1,5 +1,7 @@
 ![file-1587959572966-golang_eyecatch](https://user-images.githubusercontent.com/61613314/124248228-98630600-db5d-11eb-8088-97353ee7c78b.png)
 
+![stock](https://user-images.githubusercontent.com/61613314/126995400-581700e0-1e59-41dd-a802-6a4bb35c5ce5.gif)
+
 # GO Stock Trade Tool
 This application enables you to judge whether you should buy stock, sell stock, or not.
 
